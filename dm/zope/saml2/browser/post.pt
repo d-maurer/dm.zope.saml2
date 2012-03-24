@@ -1,0 +1,28 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  i18n:domain="dm_zope_saml"
+  tal:define="
+    dummy python: request.response.setHeader('Cache-Control', 'no-cache');
+    dummy python: request.response.setHeader('Pragma', 'no-cache');
+    dummy python: request.response.setHeader('Expires', '0');
+    "
+ >
+  <head>
+    <title i18n:translate="">Redirection</title>
+    <!-- Changed by: Dieter Maurer, 17-Feb-2012 -->
+  </head>
+  <body>
+    <h1 i18n:translate="">Redirection</h1>
+    <p i18n:translate="">If you have JavaScript enabled, you should be redirected automatically. If not, please press the button below.</p>
+    <form method="POST" name="redirect"
+	  tal:attributes="action options/action">
+      <tal:block replace="structure options/controls" />
+      <input type="submit" value="redirect" i18n:attributes="value" />
+    </form>
+    <script language="JavaScript">document.redirect.submit();</script>
+  </body>
+</html>
+ 

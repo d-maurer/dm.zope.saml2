@@ -1,0 +1,22 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    >
+
+    <!-- hope this will work for derived classes, too; if not, introduce an auxiliary interface -->
+    <browser:page
+      name="saml_select_idp"
+      for="..plugin.DetachedSimpleSpssoPlugin"
+      class=".idp.SelectIdp"
+      permission="zope.Public"
+      />
+
+    <!-- hope this will work for derived classes, too; if not, introduce an auxiliary interface -->
+    <browser:page
+      name="saml_failure"
+      for="..plugin.DetachedSimpleSpssoPlugin"
+      class=".failure.Failure"
+      permission="zope.Public"
+      />
+
+</configure>

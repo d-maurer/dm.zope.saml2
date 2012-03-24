@@ -1,0 +1,3 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+   <permission id="saml.Manage" title="Manage SAML" />
+</configure>

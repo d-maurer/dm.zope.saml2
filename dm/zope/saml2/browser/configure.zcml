@@ -1,0 +1,97 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    >
+
+    <!-- we assume all `IRole` implementors derive from `SchemaConfigured` -->
+    <browser:page
+        for="..interfaces.IRole"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiDisplayForm"
+	name="view"
+	permission="saml.Manage"
+    />
+
+    <browser:page
+        for="..interfaces.IRole"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiEditForm"
+	name="edit"
+	permission="saml.Manage"
+    />
+
+    <browser:page
+        for="..interfaces.IBaseAttributeSchema"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiDisplayForm"
+	name="view"
+	permission="saml.Manage"
+    />
+
+    <browser:page
+        for="..interfaces.IBaseAttributeSchema"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiEditForm"
+	name="edit"
+	permission="saml.Manage"
+    />
+
+
+    <browser:page
+        for="..attribute.AttributeConsumingService"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiDisplayForm"
+	name="view"
+	permission="saml.Manage"
+    />
+
+    <browser:page
+        for="..attribute.AttributeConsumingService"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiEditForm"
+	name="edit"
+	permission="saml.Manage"
+    />
+
+    <browser:page
+        for="..authority.SamlAuthority"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiDisplayForm"
+	name="view"
+	permission="saml.Manage"
+    />
+
+    <browser:page
+        for="..authority.SamlAuthority"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiEditForm"
+	name="edit"
+	permission="saml.Manage"
+    />
+
+    <browser:pages
+      for="..interfaces.IRole"
+      class=".role.RoleView"
+      permission="zope.Public"
+      >
+      <page name="redirect" attribute="redirect" />
+      <page name="post" attribute="post" />
+      <page name="soap" attribute="soap" />
+      <page name="saml_post_template" template="post.pt" />
+    </browser:pages>
+      
+
+    <browser:page
+        for="..interfaces.IEntity"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiDisplayForm"
+	name="view"
+	permission="saml.Manage"
+    />
+
+    <browser:page
+        for="..interfaces.IEntity"
+	class="dm.zope.schema.z2.form.SchemaConfiguredZmiEditForm"
+	name="edit"
+	permission="saml.Manage"
+    />
+
+    <browser:page
+        for="..interfaces.IEntity"
+	class=".entity.Update"
+	name="update"
+	permission="saml.Manage"
+    />
+
+</configure>

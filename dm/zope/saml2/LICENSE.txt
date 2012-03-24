@@ -1,0 +1,26 @@
+Copyright (C) 2010-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+D-66571 Bubach, Illtalstr. 25, Germany
+
+		All Rights Reserved
+
+This code depends (slightly) on Plone ("http://plone.org") and
+therefore is covered by the GNU General Public License (GPL).
+For the precise terms and conditions,
+see "http://www.gnu.org/licenses/gpl.html".
+
+It further depends on a lot of other components covered by
+their own licenses.
+
+
+In addition, and in compliance with the GPL, the following warranty
+restriction holds:
+
+Dieter Maurer DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL Dieter Maurer
+BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+

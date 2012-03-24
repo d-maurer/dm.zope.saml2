@@ -1,0 +1,19 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    >
+
+   <include package=".browser" />
+
+   <subscriber
+     for=".spsso.StandaloneSimpleSpsso
+          ..interfaces.IObjectMovedEvent"
+     handler=".spsso.move_handler"
+     />
+
+   <adapter
+     for=".plugin.DetachedSimpleSpssoPlugin"
+     provides="..interfaces.ISimpleSpsso"
+     factory=".plugin.default_plugin_spsso_adapter"
+     />
+
+</configure>
