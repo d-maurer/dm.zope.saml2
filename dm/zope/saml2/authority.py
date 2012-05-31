@@ -140,7 +140,9 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
     # maps roles to paths to objects implementing the role
     self.roles = self.INTERNAL_STORAGE_CLASS()
     # add entity representing ourselves
-    self.add_entity(OwnEntity())
+    #  must be delayed until `ISamlAuthority` is registered
+    #  likely, there are errors when `entityId` is changed
+    # self.add_entity(OwnEntity())
 
   def register_role_implementor(self, implementor):
     # We allow *implementor* to implement more than a single role.
@@ -366,6 +368,9 @@ def move_handler(o, e):
     if not hasattr(sm, "_p_jar"):
       raise ValueError("need a persistent active site")
     sm.registerUtility(o, provided=ISamlAuthority)
+    # if `o` is new, we must add its `OwnEntity`
+    if e.oldParent is None: # new
+      o.add_entity(OwnEntity())
 
 
 def own_metadata_changed(o, e):
