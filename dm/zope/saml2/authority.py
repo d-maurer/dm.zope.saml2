@@ -16,7 +16,7 @@ from zope.lifecycleevent import ObjectModifiedEvent
 
 from OFS.SimpleItem import SimpleItem
 
-import xmlsec
+import dm.xmlsec.binding as xmlsec
 
 from dm.zope.schema.schema import SchemaConfigured, SchemaConfiguredEvolution
 from dm.zope.schema.z2.constructor import SchemaConfiguredAddForm
@@ -190,7 +190,7 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
         if c:
           c = _make_absolute(c)
           # build key_info
-          from dm.xmlsec.pyxb.dsig import KeyInfo, X509Data
+          from pyxb.bundles.wssplat.ds import KeyInfo, X509Data
           # this assumes the file to contain a (binary) X509v3 certificate
           cert = open(c, "rb").read()
           x509 = X509Data(); x509.X509Certificate = [cert]
@@ -306,7 +306,7 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
     return ctx
 
   def _add_sign_keys(self, ctx):
-    ctx.add_key(xmlsec.cryptoAppKeyLoad(
+    ctx.add_key(xmlsec.Key.load(
       _make_absolute(self.private_key),
       xmlsec.KeyDataFormatPem,
       # if we have no private key password, pass some value
@@ -314,7 +314,6 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
       #  We would like to use the *callback* parameter, but it
       #  does not work currently
       self.private_key_password and str(self.private_key_password) or "fail",
-      None, None,
       ),
                 self.entity_id
                 )
@@ -328,16 +327,10 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
         for cert in md.get_role_certificates(r, "signing"):
           if cert in seen: continue
           seen.add(cert)
-          # unfortunately, we must use a temporary file as intermediary
-          tf = NamedTemporaryFile()
-          tf.write(cert); tf.flush()
-          # this will not work under Windows
-          try:
-            ctx.add_key(xmlsec.cryptoAppKeyLoad(
-              tf.name, xmlsec.KeyDataFormatCertDer, None, None, None),
-                        e.id
-                        )
-          finally: tf.close()
+          ctx.add_key(
+            xmlsec.Key.loadMemory(cert, xmlsec.KeyDataFormatCertDer, None),
+            e.id
+            )
 
   # override entity manager methods to update our signature context
   def _setOb(self, id, entity):
@@ -360,6 +353,12 @@ def move_handler(o, e):
       raise ValueError("need a persistent active site")
   sm = site.getSiteManager()
   if e.oldParent:
+    # prevent deletion when there are registered roles
+    if o.roles and e.newParent is None:
+      raise ValueError(
+        "must first delete role implementers",
+        ["/".join(p) for p in set(o.roles.values())]
+        )
     # unregister
     sm.unregisterUtility(o, provided=ISamlAuthority)
   if e.newParent:

@@ -212,48 +212,36 @@ and *eid* the entity identifier who should get the information.
 Dependencies
 ============
 
-This package depends on ``dm.saml2`` which has dependencies too
-complex to be handled by an automated installation (e.g. ``easy_install``
-or ``zc.buildout``). Please see the dependency description of
-``dm.saml2`` to learn what must be installed manually.
-
-In addition, the package depends on ``Zope2``. It was tested
+The package depends on ``Zope2``. It was tested
 both with Zope 2.10 and Zope 2.13 (therefore, it is expected to
 work with the intermediate versions as well). For Zope versions from
 2.12 onward, you must ensure that ``five.formlib`` is installed (as
 Zope 2.12 dropped ``zope.formlib`` support from the core; it was
 moved into a the separate package ``five.formlib``).
 
+Note that one of the dependencies (``pyxb`` in version 1.1.4) has 
+problems to get installed via package managers with Python versions before
+2.6. This makes some problems with Zope 2.10 and 2.11. Consult
+the dependecies section of ``dm.saml2`` to learn how you can work
+around this problem.
+
 
 ============
 Installation
 ============
 
-You must install the code for the package and its dependencies and
+You must install the code for the package and
 ensure that the package's ZCML definitions are interpreted on
 Zope startup. In addition, you must ensure that on Zope startup,
 the ``xmlsec`` library is initialized
-(in the standard case, calling ``dm.xmlsec.pyxb.util.default_init()``
-is sufficient for this).
+(by calling ``dm.xmlsec.binding.initialize()``).
+
+In order to learn details about ``xmlsec`` signing/verification
+failures, you might want to use ``dm.xmlsec.binding.set_error_hook``
+to let those details be logged.
 
 In the case that you are using ``zc.buildout`` for your Zope2 installation,
 then the installation steps can be summarized as follows:
-
-  *  install the "full" distribution of ``PyXB``, to
-     be found at "http://sourceforge.net/projects/pyxb/files/pyxb/".
-
-  *  install the ``libxml2`` python binding, to be found
-     at "ftp://xmlsoft.org/libxml2/python". Use a version
-     compatible with the Python version you are using.
-     For this to succeed, you likely must install the
-     operating system package for ``libxml2`` development
-     (which recursively should install the library itself).
-
-  *  install a patched version (see ``dm.saml2`` for details)
-     of ``pyxmlsec``.
-     For this to succeed, you likely must install
-     the operating system package for ``libxmlsec`` development
-     (which recursively should install the library itself).
 
   *  extend the ``eggs`` definition in your ``buildout.cfg``
      by ``dm.zope.saml2`` and (in case you are using Zope2 >= 2.12)
@@ -262,7 +250,7 @@ then the installation steps can be summarized as follows:
   *  extend the ``zcml`` definition in your ``buildout.cfg``
      by ``dm.zope.saml2``.
 
-  *  ensure ``dm.xmlsec.pyxb.util.default_init()`` gets called
+  *  ensure ``dm.xmlsec.binding.initialize()`` gets called
      on Zope startup.
 
 The default ``zope.formlib`` support for ``Password`` fields
@@ -293,4 +281,17 @@ SAML authority. For service providers (in contrast to identity providers)
 a certificate may not be necessary (this depends on the identity providers
 you want to cooperate with; if they (all) accept unsigned authentication
 requests, a private key/certificate pair is not necessary).
+
+History
+=======
+
+2.0
+
+  Version 2.0 uses ``dm.xmlsec.binding`` as Python binding to the XML
+  security library, rather then the no longer maintained ``pyxmlsec``.
+  This drastically facilitates installation.
+
+1.0
+
+  Initial release based on ``pyxmlsec``.
 
