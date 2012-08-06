@@ -2,12 +2,14 @@
 """Idp related views."""
 from urllib import quote, unquote
 
-from zope.schema import Choice
+from zope.schema import Choice, ASCIILine
 from zope.formlib.form import Fields, action
+from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 
 from Products.CMFCore.utils import getToolByName
 
 from dm.zope.schema.z2.form import PageForm
+from dm.zope.schema.widget import GenericTextWidget, make_hidden
 
 from dm.zope.saml2.interfaces import _
 
@@ -16,24 +18,35 @@ class SelectIdp(PageForm):
   label = _(u"select_idp_title", u"Select your identity provider.")
 
   def __init__(self, context, request):
+
+    def title(eid):
+      """the title of entity *eid* (or *eid* itself)."""
+      return getattr(context.get_entity(eid), "title", eid)
+
     self.form_fields = Fields(
-      Choice(__name__=u"idp",
-             title=_(u"identity_provider", u"Your identity provider"),
-             values=context.list_idps(),
-             default=context.default_idp,
-             required=True,
-             )
+      Choice(
+        __name__=u"idp",
+        title=_(u"identity_provider", u"Your identity provider"),
+        vocabulary=SimpleVocabulary(
+          tuple(SimpleTerm(eid, title(eid)) for eid in context.list_idps())
+          ),
+        default=context.default_idp,
+        required=True,
+        ),
+      ASCIILine(
+        __name__=u"came_from",
+        default=request.get("came_from", ""),
+        required=False,
+        ),
       )
     super(SelectIdp, self).__init__(context, request)
-    # ensure, we do not lose "came_from" -- this should be easier!
-    #  "dm.zope.schema" should provide a `Hidden` field
-    request.response.setCookie("came_from", quote(request["came_from"]))
+    self.form_fields["came_from"].custom_widget = make_hidden(GenericTextWidget)
 
   @action(_(u"login", u"login"))
   def login(self, action, data):
-    c = self.context; r = self.request; R = r.response
+    from dm.pdb import zpdb; zpdb.set_trace()
+    c = self.context
     idp = data["idp"]
     c.set_idp_cookie(idp)
-    R.expireCookie("came_from")
-    return self.context.authn(idp, unquote(r["came_from"]))
+    return self.context.authn(idp, data["came_from"])
 

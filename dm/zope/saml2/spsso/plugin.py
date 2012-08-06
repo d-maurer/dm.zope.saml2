@@ -153,13 +153,17 @@ class DetachedSimpleSpssoPlugin(BasePlugin, SchemaConfigured):
   def get_spsso(self):
     return ISimpleSpsso(self)
 
+  def get_entity(self, eid):
+    """return the entity specified by entity id *eid*."""
+    return self.get_spsso()._get_authority().get_entity(eid)
+
   def set_idp_cookie(self, idp):
     cn = self.idp_cookie_name
     if not cn: return
     cp = self.idp_cookie_path
     if not cp:
       # default is the portal path
-      cp = getToolByName(self, "portal_url").getPortalObject().absolute_url(True)
+      cp = "/" + getToolByName(self, "portal_url").getPortalObject().absolute_url(True)
     cparams = dict(path=cp, httpOnly=True)
     if self.idp_cookie_lifetime:
       expires = datetime.now() + self.idp_cookie_lifetime

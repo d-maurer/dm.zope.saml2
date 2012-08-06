@@ -21,6 +21,7 @@ from dm.saml2.util import normalize_class, compare_classes, pyxb_to_datetime, \
 from dm.zope.schema.schema import SchemaConfigured
 
 from dm.zope.saml2.interfaces import ISimpleSpsso, \
+     INameidFormatSupport, \
      IEncryption
 from dm.zope.saml2.permission import manage_saml
 from dm.zope.saml2.sso import Sso
@@ -42,8 +43,12 @@ class SimpleSpsso(HomogenousContainer, Sso):
   security.declareObjectProtected(manage_saml)
   security.declarePublic("authenticate")
 
-  # as we only support http-post and this required signing
+  # as we only support http-post and this requires signing
   wants_assertions_signed = True
+
+  # newly introduced
+  nameid_formats = ()
+  allow_create = True
 
   
   def __init__(self, **kw):
@@ -72,7 +77,8 @@ class SimpleSpsso(HomogenousContainer, Sso):
         if comparison is not None and comparison <= 0:
           return R.redirect(ok)
     # must authenticate
-    from dm.saml2.pyxb.protocol import AuthnRequest, RequestedAuthnContext
+    from dm.saml2.pyxb.protocol import AuthnRequest, RequestedAuthnContext, \
+         NameIDPolicy
     from dm.saml2.pyxb.assertion import AuthnContextClassRef
     req = AuthnRequest(ForceAuthn=force, IsPassive=passive)
     if authn_context_class is not None:
@@ -83,8 +89,14 @@ class SimpleSpsso(HomogenousContainer, Sso):
       req.AttributeConsumingServiceIndex = acs_index
     self.customize_authn_request(req)
     relay_state = self.store((req.ID, ok, fail))
+    nip = NameIDPolicy(AllowCreate=self.allow_create)
+    nifs = INameidFormatSupport(self).supported
+    if len(nifs) == 1: nip.Format = nifs[0]
+    req.NameIDPolicy = nip
     return self.deliver(
-      Target(eid=idp, role="idpsso", endpoint="SingleSignOnService"),
+      Target(eid=idp, role="idpsso", endpoint="SingleSignOnService",
+             sign_msg_attr="WantAuthnRequestsSigned",
+             ),
       None, req, relay_state
       )
 
@@ -93,16 +105,20 @@ class SimpleSpsso(HomogenousContainer, Sso):
 
   def _process_AuthnStatement(self, subject, s):
     info = dict(
-      user_id=subject,
+      name_qualifier=subject.NameQualifier,
+      nameid_format=subject.Format,
+      sp_name_qualifier=subject.SPNameQualifier,
+      nameid=subject.value(),
       authn_time=pyxb_to_datetime(s.AuthnInstant),
       valid_until=pyxb_to_datetime(s.SessionNotOnOrAfter),
       session_id=s.SessionIndex,
       authn_context_class=s.AuthnContext.AuthnContextClassRef,
       )
+    info["user_id"] = self.format_user_id(info)
     self._set_cookie(self.session_cookie_name, info)
 
   def _process_AttributeStatement(self, subject, s):
-    # build map of know attributes -- we might want to cache this information
+    # build map of known attributes -- we might want to cache this information
     attrs = {}
     for acs in self.objectValues():
       for att in acs.objectValues():
@@ -140,6 +156,21 @@ class SimpleSpsso(HomogenousContainer, Sso):
     #auths = self.get_authentication_session()
     #if auths is None: return
     return self._get_cookie(request, self.attribute_cookie_name)
+
+
+  def format_user_id(self, info):
+    """format user id from dict *info*.
+
+    Almost surely, the `nameid` key will be used.
+    To ensure uniqueness, you might need the `name_qualifier`.
+    `nameid_format` may allow specific decisions about
+    the user id format.
+
+    The primary purpose of this method is customization.
+    Be warned however, that changing the format will invalidate
+    existing user references.
+    """
+    return "%(name_qualifier)s::%(nameid)s" % info
 
 
   def _cookie_params(self):
@@ -291,3 +322,15 @@ def move_handler(o, e):
       raise ValueError("need a persistent active site")
     sm.registerUtility(o, provided=ISimpleSpsso)
 
+
+class NameidFormatSupport(object):
+  """SPSSO name id format support."""
+  implements(INameidFormatSupport)
+
+  def __init__(self, context): self.context = context
+
+  def make_id(*args):
+    raise NotImplementedError # we only read name ids
+
+  @property
+  def supported(self): return self.context.nameid_formats

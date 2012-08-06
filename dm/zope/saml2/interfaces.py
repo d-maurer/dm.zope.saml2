@@ -4,11 +4,13 @@ from datetime import timedelta
 from zope.interface import Interface, Attribute
 from zope.i18nmessageid import MessageFactory
 from zope.schema import ASCIILine, Password, Timedelta, Bool, Choice, \
-     Timedelta, TextLine, Int, Text
+     Timedelta, TextLine, Int, Text, \
+     Tuple
 
 from dm.saml2.util import SAML_CLASSES, normalize_class, \
      ATTRNAME_FORMATS, normalize_attrname_format, \
-     XSCHEMA_BASE_TYPES
+     XSCHEMA_BASE_TYPES, \
+     NAMEID_FORMATS
 
 from util import vocab_from_urns
 
@@ -402,6 +404,27 @@ class ISimpleSpSchema(ISamlRoleSchema):
     default=False,
     )
 
+  nameid_formats = Tuple(
+    title=_(u"nameid_formats_title", u"Nameid formats"),
+    description=_(u"name_id_formats_description",
+                  u"Specifies which nameid formats are acceptable. If left empty, any nameid format is acceptable."
+                  ),
+    value_type=Choice(
+      vocabulary=vocab_from_urns(NAMEID_FORMATS),
+      ),
+    required=False,
+    default=(),
+    )
+
+  allow_create = Bool(
+    title=_(u"allow_create_title", u"Allow identifier creation"),
+    description=_(
+      u"allow_create_description",
+      u"Allows the identity provider to create/associate a new identifier for the authenticated user."),
+    required=False,
+    default=True,
+    )
+
   # always
 ##  wants_assertions_signed = Bool(
 ##    title=_(u"wants_assertions_signed_title", u"Wants assertions signed?"),
@@ -658,4 +681,14 @@ class INameidFormatSupport(Interface):
 
 
 class IEntity(Interface):
-  """marker to indicate an entity."""
+  """An entity, a standard SAML authority can work with."""
+
+  id = Attribute(u"the entity id")
+
+  title = Attribute(u"the entities title. "
+                    u"Used as human readable entity representation. "
+                    u"Defaults to the entity id."
+                    )
+
+  def getId():
+    """valid Zope id, determined from `id` by escaping."""

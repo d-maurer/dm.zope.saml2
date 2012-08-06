@@ -88,8 +88,6 @@ class Role(RelayStateManager):
       if not ok:
         raise SamlError("subject confirmation in assertion %s is invalid" % ass.ID)
     subject = ass.Subject.NameID
-    # this loses information
-    subject = "%s::%s" % (subject.NameQualifier, subject.value())
     for tag in ("Statement", "AuthnStatement", "AuthzDecisionStatement", "AttributeStatement"):
       for s in getattr(ass, tag):
         # process statement -- "AttributeError", if we do not support its type
@@ -171,7 +169,8 @@ class Role(RelayStateManager):
     """
     if member is None: return "AuthnFailed"
     auth = self._get_authority(); us = auth.entity_id
-    teid = target.eid or req.Issuer.value()
+    teid = target.eid
+    if teid is None: teid = target.eid = req.Issuer.value()
     subject = None
     # if *req* contains a subject, ensure it identifies *member*
     if req.Subject:
@@ -183,12 +182,25 @@ class Role(RelayStateManager):
       subject = self._subject_from_member(member, sn.SPNameQualifier, sn.Format)
       if not isinstance(subject, SubjectType): return subject
       if sn.value() != subject.NameID.value(): return self.SUBJECT_MISMATCH
+    # Note: we make assumptions below which might only hold for
+    #  `AuthnRequest`.
     # determine the required name id policy
-    format, sp, ok_create = "unspecified", teid, False
+    unspecified = normalize_nameid_format("unspecified")
+    format, sp, ok_create = None, teid, True
     if req.NameIDPolicy:
       nip = req.NameIDPolicy
       format, sp, ok_create = nip.Format, nip.SPNameQualifier, nip.AllowCreate
-    if format is None: format = "unspecified"
+    if format in (None, unspecified):
+      # find a format supported by us and the requester
+      rd = target.get_role_descriptor(self._get_authority())
+      supported = INameidFormatSupport(self).supported
+      for nif in rd.NameIDFormat:
+        if nif in supported: format = nif; break
+      else:
+        if not rd.NameIDFormat or unspecified in rd.NameIDFormat:
+          # we can choose the format
+          format = supported[0]
+        else: return "InvalidNameIDPolicy"
     if sp is None: sp = teid
     return self._subject_from_member(member, sp, format, ok_create)
 
@@ -250,6 +262,7 @@ class Target(object):
                url=None, # directly specifying the URL.
                sign_ass_attr=None, # role attribute calling for assertions to be signed
                sign_ass=None, # whether assertions should be signed
+               sign_msg_attr=None, # role attribute calling for messages to be signed
                sign_msg=None, # whether the message should be signed
                ):
     for k,v in locals().items():
@@ -263,7 +276,7 @@ class Target(object):
     __traceback_info__ = self.__dict__
     eid = self.eid
     if eid is None and req is not None: eid = self.eid = req.Issuer.value()
-    rd = auth.metadata_by_id(eid).get_role_descriptor(self.role)
+    rd = self.get_role_descriptor(auth)
     if self.url:
       # the url has been directly specified.
       # SAML2 demands to verify that the url indeed belongs to the authority
@@ -310,6 +323,13 @@ class Target(object):
     if not self.sign_ass and self.sign_ass_attr:
       self.sign_ass = getattr(rd, self.sign_ass_attr)
     self.sign_ass = self.sign_ass or self.binding == HttpPostBinding
+    # determine whether we should sign the message
+    if not self.sign_msg and self.sign_msg_attr:
+      self.sign_msg = getattr(rd, self.sign_msg_attr)
+
+
+  def get_role_descriptor(self, auth):
+    return auth.metadata_by_id(self.eid).get_role_descriptor(self.role)
 
 
 class ResponseContext(ConditionsCheckContext):

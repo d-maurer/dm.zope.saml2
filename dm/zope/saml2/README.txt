@@ -237,8 +237,9 @@ the ``xmlsec`` library is initialized
 (by calling ``dm.xmlsec.binding.initialize()``).
 
 In order to learn details about ``xmlsec`` signing/verification
-failures, you might want to use ``dm.xmlsec.binding.set_error_hook``
-to let those details be logged.
+failures, you might want to use ``dm.xmlsec.binding.set_error_callback``
+to let those details be logged (for details, consult
+the ``dm.xmlsec.binding`` documentation).
 
 In the case that you are using ``zc.buildout`` for your Zope2 installation,
 then the installation steps can be summarized as follows:
@@ -282,8 +283,29 @@ a certificate may not be necessary (this depends on the identity providers
 you want to cooperate with; if they (all) accept unsigned authentication
 requests, a private key/certificate pair is not necessary).
 
+In case, the interaction between SAML entities poses problems,
+the logging facility of ``dm.zope.saml2`` can be helpful.
+Logging is enabled by setting the envvar ``SAML2_ENABLE_LOGGING``
+to a non empty value. It causes all incoming and outgoing SAML
+messages to be logged on level ``INFO``.
+
+
 History
 =======
+
+2.0b2
+
+  Improves control over name identifier formats
+  and the creation of name identifiers.
+
+  Adds titles to entities in order to provide a more friendly
+  identity provider list.
+
+  Ignores signatures in metadata to avoid a chicken-and-egg problem
+  (but this, of course, reduces security).
+
+  Supports authentication request signing (if the identity provider
+  requires this).
 
 2.0
 

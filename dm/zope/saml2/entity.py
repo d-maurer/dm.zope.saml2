@@ -5,7 +5,7 @@ We assume that our entities are schema configured and implement `IEntity`.
 from urllib import quote, unquote
 
 from zope.interface import Interface, implements
-from zope.schema import URI
+from zope.schema import URI, TextLine
 
 from OFS.SimpleItem import SimpleItem
 from OFS.ObjectManager import ObjectManager, IFAwareObjectManager
@@ -19,6 +19,16 @@ from dm.zope.saml2.interfaces import _, IEntity
 from dm.zope.saml2.permission import manage_saml
 
 
+class IManageableEntity(IEntity):
+  specified_title = TextLine(
+    title=_(u"specified_title_title", u"Title"),
+    description=_(u"specified_title_description",
+                  u"An explicitely specified title. If you do not specify a tilte, it defaults to the entity id."),
+    required=False
+    )
+
+
+
 class ManageableEntityMixin(SchemaConfigured, SimpleItem):
   """Mixin class to provide `SchemaConfigured` based manageability.
 
@@ -27,7 +37,7 @@ class ManageableEntityMixin(SchemaConfigured, SimpleItem):
 
   The instances expect to be managed inside a `MetadataRepository`.
   """
-  implements(IEntity)
+  implements(IManageableEntity)
 
   manage_options = (
     {"label" : "Edit", "action" : "@@edit"},
@@ -38,6 +48,8 @@ class ManageableEntityMixin(SchemaConfigured, SimpleItem):
 
   security = ClassSecurityInfo()
   security.declareObjectProtected(manage_saml)
+
+  specified_title = ''
 
   def metadata(self, REQUEST):
     """Web access to metadata."""
@@ -50,7 +62,7 @@ class ManageableEntityMixin(SchemaConfigured, SimpleItem):
     return md
     
     
-  # override `SimpleItem` methods to get our id attribute to be named `id`
+  # override `SimpleItem` methods such that our `id` attribute is used.
   def getId(self):
     # must return a quoted id as entity ids may contain characters
     #  forbidden in Zope ids
@@ -58,8 +70,13 @@ class ManageableEntityMixin(SchemaConfigured, SimpleItem):
 
   def _setId(self, id): self.id = id
 
+  # implement `title` as `specified_title or id`.
+  def _get_title(self): return self.specified_title or self.id
+  def _set_title(self, title): self.specified_title = title
+  title = property(_get_title, _set_title)
 
-class IEntityByUrl(IEntity):
+
+class IEntityByUrl(IManageableEntity):
   url = URI(
     title=_(u"entity_url_title", "Url"),
     description=_(
@@ -77,9 +94,6 @@ class EntityByUrl(ManageableEntityMixin, EntityByUrl):
   meta_type = "Saml2 entity defined by metadata providing url"
 
   SC_SCHEMAS = (IEntityByUrl,)
-
-  @property
-  def title(self): return self.url
 
 
 class EntityManagerMixin(IFAwareObjectManager, ObjectManager):

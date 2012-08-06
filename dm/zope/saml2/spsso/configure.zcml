@@ -16,4 +16,11 @@
      factory=".plugin.default_plugin_spsso_adapter"
      />
 
+   <!-- name id format support -->
+   <adapter
+     for="..interfaces.ISimpleSpsso"
+     provides="..interfaces.INameidFormatSupport"
+     factory=".spsso.NameidFormatSupport"
+     />
+
 </configure>
