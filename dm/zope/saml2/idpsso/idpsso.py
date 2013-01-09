@@ -130,7 +130,7 @@ class SimpleIdpsso(SimpleItem, SchemaConfigured, Sso):
         if not isinstance(attr_st, AttributeStatementType):
           # this is in fact error information (a string for the moment)
           return self._failAuthnRequest(req, relay_state, attr_st)
-      authn_ass.AttributeStatement.append(attr_st)
+        authn_ass.AttributeStatement.append(attr_st)
     return self.deliver_success(target, req, (authn_ass,), relay_state)
 
   def _make_authn_assertion(self, target, req, member):
