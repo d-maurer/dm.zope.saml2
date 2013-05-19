@@ -297,6 +297,13 @@ class Target(object):
         if ok: break
       if not ok:
         raise SamlError("`%s` does not belong to authority `%s`" % (self.url, eid))
+      if self.binding is None:
+ 	# The request has specified a serice url but no
+ 	#  protocol binding. Try post (the only binding
+ 	#  we currently support for authentication responses)
+        #  Alternatively, we may try the url to determine
+        #  the binding from metadata
+        self.binding = HttpPostBinding
     else:
       # `endpoint` must have been specified
       epd = getattr(rd, self.endpoint)
