@@ -290,8 +290,100 @@ to a non empty value. It causes all incoming and outgoing SAML
 messages to be logged on level ``INFO``.
 
 
+=============
+Customization
+=============
+
+The package supports several levels of customizations:
+basic customizations via the ZMI through configuration menues,
+customization by registration of adapters
+and integrating your own class implementations, possibly derived
+from base classes defined in this package.
+
+When you create objects described in the architecture section,
+you are sent to a configuration menue to enter the
+relevant configuration parameters. Those menues should be self
+explanatory.
+
+Via the registration of appropriate adapters, you can
+currently control the supported nameid formats,
+the storage used by the ``RelayStateManager``
+and the generation of urls for role objects.
+The relevant adapter interfaces are defined in
+``dm.zope.saml2.interfaces``.
+
+The built in nameid format support supports only the ``unspecified``
+format. Via the registration of an ``INameidFormatSupport`` role
+adapter, you can control which nameid formats the adapted role
+should support.
+
+By default, the ``RelayManagerState`` (used to remember state
+during the login process) is stored inside the ZODB in
+a role attribute. By defining an ``IRelayStateStore``
+role adapter you can provide a different store. Note that
+this adaptation takes effect only during the creation of the role.
+Should you plan to switch storage at a later time, you must
+call ``Sso.__init__`` on the role again.
+Note that aborted login processes leave state records behind.
+To get rid of them, consider to call the role's ``clear`` method
+from time to time (maybe once in a month).
+
+The generation of the role urls used in the metadata is a bit
+complex. The first reason is of a technical nature: the generation
+may be activated in a context where the request object cannot be
+accessed in the normal Zope way (i.e. via acquisition);
+therefore, the normal methods to determine an url do not work
+(reliably). The second reason comes from the fact that a Zope
+installation can often be accessed via different urls (e.g.
+an internal one and one via a virtual host and that the metadata is
+cached; the cached urls in the metadata must ensure they are valid
+for all cases and therefore must not depend on the specific request
+url that accidentally lead to their creation. To work around
+this complexity, the default behavior is to generate the role
+urls from a base url (specified as authority configuration attribute)
+and the path to the respective role. This usually generates
+valid urls but they are often longer than necessary and may reveal details
+of the internal structure of your Zope installation (the full path
+to the role objects) which you might want to hide.
+For those cases, you can register an authority ``IUrlCustomizer`` adapter
+and there determine the role urls you would like.
+
+For all cases for which the provided customization possibilities
+are not sufficient, you can define your own classes and
+instantiate them in place of the standard ones.
+
+
+================
+Interoperability
+================
+
+I have developed this package as part of a (paid) project -
+by factoring out into this open source package
+the parts which might be useful to others. However, I did
+not invest much effort towards things not relevant to my project.
+Especially, I have not performed extensive interoperability tests.
+
+The package works for my project and it should work with
+``SimpleSAMLphp`` (http://simplesamlphp.org/) which I used
+as functional blueprint. Should I detect interoperability problems
+in future projects of mine, I will investigate and fix them.
+
+When you use this package in your own projects, you might
+hit interoperability problems. In those cases, you will need
+to investigate (and potentially fix them) or use another
+SAML integration. You may send me your fixes and I will consider
+whether to incorporate them in future versions.
+
+
+
+=======
 History
 =======
+
+2.0b3 - 2.0b5
+
+  Various fixes and improvements based on experience
+  by Dylan Jay
 
 2.0b2
 

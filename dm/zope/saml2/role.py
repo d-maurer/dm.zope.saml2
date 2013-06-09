@@ -7,6 +7,7 @@ from os import environ
 from zope.interface import implements
 from zope.component import getUtility
 from BTrees.OOBTree import OOBTree
+from Acquisition import Explicit
 
 from dm.saml2.pyxb.protocol import Response
 from dm.saml2.pyxb.assertion import NameID, \
@@ -16,16 +17,24 @@ from dm.saml2.binding import SoapBinding, HttpPostBinding, HttpRedirectBinding
 from dm.saml2.util import normalize_nameid_format
 from dm.saml2.binding.util import Store, UnmanagedError, RelayStateManager
 
-from interfaces import ISamlAuthority, IHttpTransport, INameidFormatSupport
+from interfaces import ISamlAuthority, IHttpTransport, INameidFormatSupport, \
+     IRelayStateStore
 from exception import SamlError
 
 logger = getLogger(__name__)
+
+
+class Store(Store, Explicit):
+  """`Store` wrapper facilitating access to the request (and the Zope session)."""
+
 
 class Role(RelayStateManager):
   """Generic role infrastructure."""
   
   def __init__(self):
-    RelayStateManager.__init__(self, Store(OOBTree()))
+    RelayStateManager.__init__(
+      self, Store(IRelayStateStore(self, None) or OOBTree())
+      )
 
 
   def handle_Response(self, rsp, binding, relay_state):

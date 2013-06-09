@@ -23,6 +23,7 @@ from dm.zope.saml2.role import Target
 from dm.zope.saml2.attribute import SimpleAttributeProvider
 
 
+
 # might want to implement as a tool
 class SimpleIdpsso(SimpleItem, SchemaConfigured, Sso):
   """Zope2 implementation for a simple SAML Idpsso.
@@ -48,6 +49,11 @@ class SimpleIdpsso(SimpleItem, SchemaConfigured, Sso):
     {"label" : "View", "action" : "@@view"},
     {"label" : "Edit", "action" : "@@edit"},
     ) + SimpleItem.manage_options
+
+  
+  def __init__(self, **kw):
+    SchemaConfigured.__init__(self, **kw)
+    Sso.__init__(self)
 
 
 # Standard Plone values -- change, if you need something special
@@ -80,9 +86,7 @@ class SimpleIdpsso(SimpleItem, SchemaConfigured, Sso):
     if req.ForceAuthn or member is None:
       if req.ForceAuthn: self.acl_users.resetCredentials() # force logout
       # prepare authentication
-      r = self.REQUEST; s = r["SESSION"]
-      skey = uuid()
-      s[skey] = (req, relay_state)
+      skey = self.store((req, relaye_state))
       # the view logic gives us an extremely funny "URL" -- explicitely, use
       #  our URL
       # use portal url as base for "login_form"
@@ -179,8 +183,7 @@ class SimpleIdpsso(SimpleItem, SchemaConfigured, Sso):
     
   def idpsso_logged_in(self, skey):
     """return here after a successful login."""
-    r = self.REQUEST; s = r["SESSION"]
-    req, relay_state = s[skey]
+    req, relay_state = self.retrieve(skey)
     member = getToolByName(self, "portal_membership").getAuthenticatedMember()
     return self._okAuthnRequest(req, relay_state, member)
 
@@ -199,6 +202,17 @@ class SimpleIdpsso(SimpleItem, SchemaConfigured, Sso):
   def _supported_nameid_policy(self, nip):
     # we only support "unspecified"
     return not nip.Format or nip.Format in INameidFormatSupport(self).supported
+
+  # ealier versions forgot to perform `Sso` initialization - work around
+  class _Upgrader(object):
+    """Auxiliary descriptor to ensure we have a `_store` attribute."""
+    def __get__(self, inst, cls):
+      if inst is None: return cls._store
+      id = inst.__dict__
+      if "_store" not in id: Sso.__init__(inst)
+      return id["_store"]
+
+  _store = _Upgrader()
 
 # no longer necessary
 #InitializeClass(SimpleIdpsso)

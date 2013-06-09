@@ -4,7 +4,7 @@ try:
   from setuptools import setup
   setupArgs = dict(
       include_package_data=True,
-      install_requires=['dm.saml2>=2.0.1',
+      install_requires=['dm.saml2>=2.0.5',
                         "dm.zope.schema>=2.0.1",
                         "setuptools", # to keep buildout happy
                         ],

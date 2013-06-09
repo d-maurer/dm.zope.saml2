@@ -680,6 +680,10 @@ class INameidFormatSupport(Interface):
     """
 
 
+
+
+#############################################################################
+## SAML entities
 class IEntity(Interface):
   """An entity, a standard SAML authority can work with."""
 
@@ -692,3 +696,51 @@ class IEntity(Interface):
 
   def getId():
     """valid Zope id, determined from `id` by escaping."""
+
+
+#############################################################################
+## Relay state management
+
+class IRelayStateStore(Interface):
+  """a mapping store used to manage the relay state.
+
+  The store should be able to store picklable objects under
+  unique ids. Currently, pairs consisting of a `PyXB` object
+  representing an SAML2 request and a relay state,
+  and triples consisting of an uuid and 2 urls are stored.
+  This may change however in the future.
+
+  The store should be integrated in the Zope transaction
+  system. Otherwise, it may not work correctly should
+  `ConflictError` arise.
+
+  Possible stores (among others) are an `OOBTree` or the Zope session.
+  """
+
+  def __setitem__(id, v):
+    """store *v* under *id*."""
+
+  def __getitem__(id):
+    """retrieve value associated with *id*."""
+
+  def __delitem__(id):
+    """delete value under *id*."""
+
+  def clear():
+    """clear the complete store."""
+
+
+#############################################################################
+## Url customization
+
+class IUrlCustomizer(Interface):
+  """Interface describing url customizing."""
+
+  def url(obj):
+    """the url to be used for *obj*.
+
+    Be careful: the method can be used in contests where the request object
+    may not be accessible via acquisition. Therefore, you
+    cannot use a standard `IUrl` adapter in an implementation.
+    """
+

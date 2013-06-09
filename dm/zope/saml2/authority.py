@@ -29,7 +29,8 @@ from dm.saml2 import signature
 
 from interfaces import ISamlAuthority, \
      IIdpssoRole, ISpssoRole, IApRole, IAuthnRole, IPdpRole, \
-     INameidFormatSupport
+     INameidFormatSupport, \
+     IUrlCustomizer
 
 from permission import manage_saml
 from util import ZodbSynchronized
@@ -284,6 +285,8 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
     return md
 
   def _get_url(self, obj):
+    customizer = IUrlCustomizer(self, None)
+    if customizer is not None: return customizer.url(obj)
     return self.base_url + "/" + obj.absolute_url(True)
 
   ## signature support
