@@ -7,6 +7,7 @@ from os import environ
 from zope.interface import implements
 from zope.component import getUtility
 from BTrees.OOBTree import OOBTree
+from ExtensionClass import Base
 from Acquisition import Explicit
 
 from dm.saml2.pyxb.protocol import Response
@@ -24,7 +25,7 @@ from exception import SamlError
 logger = getLogger(__name__)
 
 
-class Store(Store, Explicit):
+class Store(Base, Store, Explicit):
   """`Store` wrapper facilitating access to the request (and the Zope session)."""
 
 
