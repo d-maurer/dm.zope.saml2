@@ -44,7 +44,6 @@ class SelectIdp(PageForm):
 
   @action(_(u"login", u"login"))
   def login(self, action, data):
-    from dm.pdb import zpdb; zpdb.set_trace()
     c = self.context
     idp = data["idp"]
     c.set_idp_cookie(idp)
