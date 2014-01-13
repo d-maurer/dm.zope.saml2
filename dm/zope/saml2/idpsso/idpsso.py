@@ -86,11 +86,11 @@ class SimpleIdpsso(SimpleItem, SchemaConfigured, Sso):
     if req.ForceAuthn or member is None:
       if req.ForceAuthn: self.acl_users.resetCredentials() # force logout
       # prepare authentication
-      skey = self.store((req, relaye_state))
+      skey = self.store((req, relay_state))
       # the view logic gives us an extremely funny "URL" -- explicitely, use
       #  our URL
       # use portal url as base for "login_form"
-      r.response.redirect("%s/%s?%s" % (
+      self.REQUEST.response.redirect("%s/%s?%s" % (
         getToolByName(self, "portal_url")(), self.login_form,
         make_query({self.came_from : "%s/idpsso_logged_in?%s" % (
           self.absolute_url(), make_query(skey=skey)

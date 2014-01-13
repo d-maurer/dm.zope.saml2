@@ -299,7 +299,7 @@ class Target(object):
       target_host = urlsplit(self.url)[1]
       ok = False
       for c in child_values(rd):
-        if not isinstance(c, list): continue # all endpoints can appear multiple
+        if not hasattr(c, "__iter__"): continue # all endpoints are repeatable
         for ep in c:
           if not isinstance(ep, EndpointType): break # if the first value is not endpoint, none will be
           # should we consider `ResponseLocation` as well?

@@ -380,7 +380,7 @@ whether to incorporate them in future versions.
 History
 =======
 
-2.0b3 - 2.0b5
+2.0b3 - 2.0b8
 
   Various fixes and improvements based on experience
   by Dylan Jay
