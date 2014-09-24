@@ -1,6 +1,5 @@
 # Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
 """Generic role infrastructure."""
-from datetime import datetime
 from logging import getLogger
 from os import environ
 
@@ -15,7 +14,7 @@ from dm.saml2.pyxb.assertion import NameID, \
      SubjectType, Subject, SubjectConfirmation, \
      ConditionsCheckContext
 from dm.saml2.binding import SoapBinding, HttpPostBinding, HttpRedirectBinding
-from dm.saml2.util import normalize_nameid_format
+from dm.saml2.util import normalize_nameid_format, utcnow, as_utc
 from dm.saml2.binding.util import Store, UnmanagedError, RelayStateManager
 
 from interfaces import ISamlAuthority, IHttpTransport, INameidFormatSupport, \
@@ -85,7 +84,7 @@ class Role(RelayStateManager):
           continue
         scd = sc.SubjectConfirmationData
         if scd is None: continue # not valid
-        if scd.NotOnOrAfter is None or datetime.utcnow() >= scd.NotOnOrAfter:
+        if scd.NotOnOrAfter is None or utcnow() >= as_utc(scd.NotOnOrAfter):
           continue # not valid
         if scd.Recipient != context.rsp.Destination:
           continue # not valid

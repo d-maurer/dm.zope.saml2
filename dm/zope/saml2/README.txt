@@ -376,9 +376,52 @@ whether to incorporate them in future versions.
 
 
 
+==============
+Known Problems
+==============
+
+
+Export/Import Problems
+======================
+
+The package uses several Zope objects for its configuration.
+Those are not standalone but have quite a complex relationship
+among them. For example,
+identity provider objects and service provider objects depend on
+an authority (accessed as a (local) utility) and register with it.
+The authority must generate metadata for its roles (e.g. identity
+provider and/or service provider) and therefore requires references
+to the corresponding configuration objects.
+
+Zope's standard (ZODB based) export/import functionality operates on
+a single object base. It has problems to handle object sets with
+interdependencies (such as the SAML configuration object set).
+
+It is known that SAML authority objects raise an exception when
+you try to import them. There are hints that imported identity and
+service provider objects fail to properly register themselves with
+the autority.
+
+I do not know whether you can correctly import the whole
+configuration structure as part of a common container object.
+There are hints that you must at least include in the import
+the local component registry where the SAML authority has registered with.
+
+
 =======
 History
 =======
+
+3.0b1
+
+  Switch to non-naive ``datetime`` values in the UTC time zone
+  (rather than naive UTC ``datetime`` values) - in the hope
+  that this improves interoperability.
+  
+  As a consequence, generated SAML time values use a ``Z`` suffix,
+  which appears to contradict section 1.3.3 of the SAML2 specification
+  but which is compatible with many SAML2 implementations (e.g. Amazon AWS).
+  Apparently, ``ADFS`` insists on this format.
 
 2.0b3 - 2.0b8
 

@@ -1,6 +1,6 @@
 # Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
 """The Idpsso implementation."""
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from zope.interface import implements
 
@@ -11,7 +11,7 @@ from ZTUtils import make_query
 from Products.CMFCore.utils import getToolByName
 
 from dm.saml2.uuid import uuid
-from dm.saml2.util import compare_classes, normalize_nameid_format
+from dm.saml2.util import compare_classes, normalize_nameid_format, utcnow
 from dm.zope.schema.schema import SchemaConfigured
 from dm.saml2.pyxb.assertion import AssertionType
 
@@ -154,7 +154,7 @@ class SimpleIdpsso(SimpleItem, SchemaConfigured, Sso):
     subject.SubjectConfirmation.append(     
       SubjectConfirmation(
         SubjectConfirmationData(
-          NotOnOrAfter=datetime.utcnow() + self.BROWSER_SSO_VALIDITY,
+          NotOnOrAfter=utcnow() + self.BROWSER_SSO_VALIDITY,
           Recipient=target.url,
           InResponseTo=req.ID,
           ),

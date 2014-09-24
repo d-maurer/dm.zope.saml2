@@ -41,8 +41,8 @@ class ManageableEntityMixin(SchemaConfigured, SimpleItem):
 
   manage_options = (
     {"label" : "Edit", "action" : "@@edit"},
-    {"label" : "Metadata", "action" : "metadata"},
     {"label" : "Update", "action" : "@@update"},
+    {"label" : "Metadata", "action" : "metadata"},
     ) + SimpleItem.manage_options
     
 

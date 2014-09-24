@@ -1,6 +1,5 @@
 # Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
 """The SPSSO role."""
-from datetime import datetime
 try: from hashlib import sha256 as digest_module
 except ImportError: import md5 as digest_module
 import hmac
@@ -17,7 +16,8 @@ from ZTUtils import make_query
 from persistent.list import PersistentList
 
 from dm.saml2.util import normalize_class, compare_classes, pyxb_to_datetime, \
-     normalize_attrname_format, xs_convert_from_xml
+     normalize_attrname_format, xs_convert_from_xml, \
+     as_utc, utcnow
 from dm.zope.schema.schema import SchemaConfigured
 
 from dm.zope.saml2.interfaces import ISimpleSpsso, \
@@ -109,8 +109,8 @@ class SimpleSpsso(HomogenousContainer, Sso):
       nameid_format=subject.Format,
       sp_name_qualifier=subject.SPNameQualifier,
       nameid=subject.value(),
-      authn_time=pyxb_to_datetime(s.AuthnInstant),
-      valid_until=pyxb_to_datetime(s.SessionNotOnOrAfter),
+      authn_time=pyxb_to_datetime(as_utc(s.AuthnInstant)),
+      valid_until=pyxb_to_datetime(as_utc(s.SessionNotOnOrAfter)),
       session_id=s.SessionIndex,
       authn_context_class=s.AuthnContext.AuthnContextClassRef,
       )
@@ -140,7 +140,7 @@ class SimpleSpsso(HomogenousContainer, Sso):
     info = self._get_cookie(request, self.session_cookie_name)
     if info is None: return
     if info["valid_until"] is not None:
-      if datetime.utcnow() >= info["valid_until"]: return # no longer valid
+      if utcnow() >= info["valid_until"]: return # no longer valid
     return info
 
 

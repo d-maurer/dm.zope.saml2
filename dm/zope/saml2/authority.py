@@ -1,6 +1,5 @@
 # Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
 """Authority and metadata."""
-from datetime import datetime
 from tempfile import NamedTemporaryFile
 
 from persistent import Persistent
@@ -26,6 +25,7 @@ from dm.saml2.metadata import EntityBase, EntityByUrl, \
 from dm.saml2.binding import SoapBinding, HttpRedirectBinding, HttpPostBinding
 from dm.saml2.pyxb.metadata import EndpointType, IndexedEndpointType
 from dm.saml2 import signature
+from dm.saml2.util import utcnow
 
 from interfaces import ISamlAuthority, \
      IIdpssoRole, ISpssoRole, IApRole, IAuthnRole, IPdpRole, \
@@ -179,7 +179,7 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
     from dm.saml2.pyxb import metadata
     ed = metadata.EntityDescriptor(
       entityID=self.entity_id,
-      validUntil=datetime.utcnow() + self.metadata_validity,
+      validUntil=utcnow() + self.metadata_validity,
       )
     ld = metadata.__dict__
     for r, p in self.roles.items():
