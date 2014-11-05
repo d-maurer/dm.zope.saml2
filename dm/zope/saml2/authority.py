@@ -349,8 +349,8 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
 
 ### automatic [un]registration on add/move/delete
 def move_handler(o, e):
-  # import will probably need to move for newer Zope
-  from zope.app.component.hooks import getSite
+  try: from zope.component.hooks import getSite
+  except ImportError: from zope.app.component.hooks import getSite
   site = getSite()
   if site is None:
       raise ValueError("need a persistent active site")
