@@ -131,7 +131,9 @@ class SimpleSpsso(HomogenousContainer, Sso):
          att.Name
          ))
       if d is None: continue # do not know this attribute
-      info[d.getId()] = xs_convert_from_xml(att.AttributeValue, d.is_sequence)
+      info[d.getId()] = xs_convert_from_xml(
+        att.AttributeValue, d.is_sequence, d.type
+        )
     self._set_cookie(self.attribute_cookie_name, info)
 
 

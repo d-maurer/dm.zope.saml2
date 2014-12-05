@@ -49,6 +49,9 @@ class RequestedAttribute(BaseAttribute):
 
   SC_SCHEMAS = (IRequestedAttributeSchema,)
 
+  # for backward compatibility
+  type = None
+
 
 class ProvidedAttribute(BaseAttribute):
   meta_type = "Saml provided attribute"

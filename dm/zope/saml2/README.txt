@@ -412,6 +412,13 @@ the local component registry where the SAML authority has registered with.
 History
 =======
 
+3.1b1
+
+  Allow to specify a type for a requested attribute. This can be
+  necessary as some identity providers (e.g. some from Microsoft)
+  do not provide type information in ``AttributeValue`` elements
+  (but rely on type information exchange in a different way).
+
 3.0b1
 
   Switch to non-naive ``datetime`` values in the UTC time zone

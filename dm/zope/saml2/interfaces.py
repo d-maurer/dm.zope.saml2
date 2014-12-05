@@ -222,6 +222,17 @@ class IRequestedAttributeSchema(IBaseAttributeSchema):
     default=False,
     )
 
+  type = Choice(
+    title=_(u"requested_attribute_type_title", u"Attribute type"),
+    description=_(
+      u"requested_attribute_type_description",
+      u"The XML-schema type of this attribute or its components. It must be a base type. The previous property controls whether the attribute is a sequence of value of this type or a single value."
+      ),
+    values=XSCHEMA_BASE_TYPES,
+    required=False,
+    default=u"string",
+    )
+
 
 class IAttributeConsumingServiceSchema(IItemSchema):
   # override "title" to make it required
