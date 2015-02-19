@@ -182,11 +182,13 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
       validUntil=utcnow() + self.metadata_validity,
       )
     ld = metadata.__dict__
+    rno = 0
     for r, p in self.roles.items():
       if r == "ap": continue # for the moment
       i = self.unrestrictedTraverse(p)
       rd = ld[role2element[r]]()
       getattr(ed, rd.__class__.__name__[:-4]).append(rd)
+      rno += 1
       for c in (self.certificate, self.future_certificate):
         if c:
           c = _make_absolute(c)
@@ -204,6 +206,8 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
         rd.NameIDFormat = nifs.supported
       # add role specific information -- we do not yet support all roles
       getattr(self, "gen_metadata_" + r)(i, rd)
+    id not rno:
+      raise ValueError("The authority does not have associated roles; its metadata would violate the saml2 metadata schema")
     return ed.toxml()
 
   def gen_metadata_sso(self, implementor, rd):
