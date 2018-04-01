@@ -105,7 +105,7 @@ class DetachedSimpleSpssoPlugin(BasePlugin, SchemaConfigured):
   def login(self):
     """explicit login request."""
     r = self.REQUEST; purl = getToolByName(self, "portal_url")()
-    came_from = r.get("HTTP_REFERER") or purl
+    came_from = r.get("came_from") or r.get("HTTP_REFERER") or purl
     idp = self.determine_idp()
     if idp:
       return self.authn(idp, came_from,

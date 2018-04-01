@@ -447,7 +447,11 @@ History
 
   Plone 5 compatibility. ATT: may introduce a backward incompatibility
   in the case that your portal does not use "utf-8" as charset.
-  See the section "Text handling" above
+  See the section "Text handling" above.
+
+  The explicit login request now allows a "caller" to determine
+  where to redirect to after a successful login by defining
+  the request variable `came_from`.
 
 3.1b1
 
