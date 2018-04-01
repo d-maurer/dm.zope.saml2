@@ -206,7 +206,7 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
         rd.NameIDFormat = nifs.supported
       # add role specific information -- we do not yet support all roles
       getattr(self, "gen_metadata_" + r)(i, rd)
-    id not rno:
+    if not rno:
       raise ValueError("The authority does not have associated roles; its metadata would violate the saml2 metadata schema")
     return ed.toxml()
 
