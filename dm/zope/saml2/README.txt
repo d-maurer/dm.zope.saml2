@@ -408,9 +408,46 @@ There are hints that you must at least include in the import
 the local component registry where the SAML authority has registered with.
 
 
+Text handling
+=============
+
+A modern system should represent text internally as unicode
+and convert from/to encoded strings only at system boundaries.
+For historical (and likely backward compatibility) reasons, Plone
+does not (yet) work this way: typically, while it stores unicode it
+converts to/from encoded strings at the storage boundary; most parts
+of Plone, and especially member properties, handle encoded strings, not
+unicode. SAML2, in contrast, is a unicode based technology. This,
+unfortunately, requires a bridge between the SAML2 and the Plone world.
+To implement the bridge, knowledge is required about the charset used by
+Plone to convert between Unicode and encoded bytes.
+
+Plone before version 5 used to make this charset configurable via a
+property; `Products.PlonePAS.utils` defined a function `getCharset` to
+return this configuration option and `dm.zope.saml2` before
+version 4 used it to implement the bridge mentioned above.
+Plone 5, at least the dexterity part, has fixed the charset to "utf-8",
+the `getCharset` function is gone.
+
+To obtain a `dm.zope.saml2` version capable to work both with Plone 5 and
+former Plone versions, it implements (from version 4 on)
+its own `getCharset` function
+(in its `util` module). By default, it returns "utf-8" as charset --
+a value appropriate for most Plone setups and especially
+likely all modern Plone setups. Should your setup use a different charset,
+your must register a `dm.zope.saml2.util.ICharset` adapter for the
+portal root returning the charset used for the portal.
+
+
 =======
 History
 =======
+
+4.0
+
+  Plone 5 compatibility. ATT: may introduce a backward incompatibility
+  in the case that your portal does not use "utf-8" as charset.
+  See the section "Text handling" above
 
 3.1b1
 

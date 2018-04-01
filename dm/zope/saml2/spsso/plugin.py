@@ -122,7 +122,7 @@ class DetachedSimpleSpssoPlugin(BasePlugin, SchemaConfigured):
     info = self.get_spsso().get_attributes(self.REQUEST) or {}
     # the stupid Plone is unable to handle unicode properties
     #  must encode them
-    from Products.PlonePAS.utils import getCharset
+    from ..util import getCharset
     charset = getCharset(self)
     for k,v in info.items():
       if isinstance(v, unicode): info[k] = v.encode(charset)

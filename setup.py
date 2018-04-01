@@ -6,6 +6,7 @@ try:
       include_package_data=True,
       install_requires=['dm.saml2>=3.1.2',
                         "dm.zope.schema>=2.0.1",
+                        "five.formlib",
                         "setuptools", # to keep buildout happy
                         ],
       namespace_packages=['dm', 'dm.zope'],

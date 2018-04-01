@@ -175,7 +175,7 @@ class SimpleAttributeProvider(AttributeContainer, Role):
       # Plone stupidly converts unicode properties to `str`
       if isinstance(v, str) and d.type == "string":
         # convert back to unicode
-        from Products.PlonePAS.utils import getCharset
+        from .util import getCharset
         v = unicode(v, getCharset(self))
       # potentially, more encodings are necessary
       xv = xs_convert_to_xml(d.type, v, AttributeValue)

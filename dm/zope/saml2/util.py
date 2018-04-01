@@ -52,3 +52,19 @@ class ZodbSynchronized(Persistent):
     self._p_changed=True # ensure caches in other ZODB connections are flushed
     for k in self.__dict__.keys():
       if k.startswith("_v_"): delattr(self, k)
+
+
+# Implement a `getCharset` function, no longer provided
+#  by `Products.PlonePAS.utils`
+#  For details, read the section "Text handling" in `README.txt`.
+from zope.interface import Interface
+from zope.component import queryAdapter
+
+from Products.CMFCore.utils import getToolByName
+
+class ICharset(Interface):
+  """Marker interface for an adapter returning the charset used by a Plone portal."""
+
+def getCharset(context):
+  portal = getToolByName(context, "portal_url").getPortalObject()
+  return queryAdapter(portal, ICharset, default="utf-8")
