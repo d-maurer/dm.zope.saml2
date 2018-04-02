@@ -6,6 +6,7 @@
 
    <five:registerPackage package="." initialize=".initialize" />
 
+   <include package="five.formlib" />
    <include package="dm.zope.schema" file="timedelta.zcml" />
 
    <include file="permission.zcml" />
