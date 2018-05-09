@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2018 by Dr. Dieter Maurer <dieter@handshake.de>
 """Authority and metadata."""
 from tempfile import NamedTemporaryFile
 
@@ -9,7 +9,7 @@ from AccessControl import ClassSecurityInfo
 #from Globals import InitializeClass
 
 from zope.interface import Interface, implements
-from zope.component import getUtility
+from zope.component import getUtility, ComponentLookupError
 from zope.event import notify
 from zope.lifecycleevent import ObjectModifiedEvent
 
@@ -89,7 +89,8 @@ class OwnEntity(ManageableEntityMixin, EntityBase):
 
   # use the authorities entity id as our id
   def id(self):
-    return getUtility(ISamlAuthority).entity_id
+    try: return getUtility(ISamlAuthority).entity_id
+    except ComponentLookupError: return 'invalid_context'
   id = property(id, lambda self, value: None)
 
   def get_metadata_document(self):
