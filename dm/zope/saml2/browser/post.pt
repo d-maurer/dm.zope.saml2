@@ -12,15 +12,18 @@
  >
   <head>
     <title i18n:translate="">Redirection</title>
-    <!-- Changed by: Dieter Maurer, 17-Feb-2012 -->
+    <!-- Changed by: dieter, 22-Jun-2018 -->
   </head>
   <body>
     <h1 i18n:translate="">Redirection</h1>
-    <p i18n:translate="">If you have JavaScript enabled, you should be redirected automatically. If not, please press the button below.</p>
     <form method="POST" name="redirect"
 	  tal:attributes="action options/action">
       <tal:block replace="structure options/controls" />
-      <input type="submit" value="redirect" i18n:attributes="value" />
+      <script language="JavaScript"></script>
+      <noscript>
+        <p i18n:translate="">Apparently, you do not have JavaScript enabled. Please press the button below to get redirected to your service provider.</p>
+        <input type="submit" value="redirect" i18n:attributes="value" />
+      </noscript>
     </form>
     <script language="JavaScript">document.redirect.submit();</script>
   </body>
