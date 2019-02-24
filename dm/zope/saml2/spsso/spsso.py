@@ -1,16 +1,19 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """The SPSSO role."""
 try: from hashlib import sha256 as digest_module
 except ImportError: import md5 as digest_module
 import hmac
-from cPickle import loads, dumps
+try: from cPickle import loads, dumps # Python 2
+except ImportError: # Python 3
+  from pickle import loads, dumps
+from base64 import b64encode, b64decode
 from zlib import compress, decompress
 
-from zope.interface import implements
+from zope.interface import implementer
 from zope.component import getUtility
 
 from AccessControl import ClassSecurityInfo
-from Globals import InitializeClass
+from AccessControl.class_init import InitializeClass
 from OFS.SimpleItem import SimpleItem
 from ZTUtils import make_query
 from persistent.list import PersistentList
@@ -30,10 +33,9 @@ from dm.zope.saml2.attribute import \
      HomogenousContainer, AttributeConsumingService
 
 
+@implementer(ISimpleSpsso)
 class SimpleSpsso(HomogenousContainer, Sso):
   """Zope 2 implementation of a simple SAML2 Spsso."""
-
-  implements(ISimpleSpsso)
 
   SC_SCHEMAS = (ISimpleSpsso,)
   CONTENT_TYPE = AttributeConsumingService
@@ -196,12 +198,12 @@ class SimpleSpsso(HomogenousContainer, Sso):
       value = getUtility(IEncryption).encrypt(key, s)
     else:
       value = hmac.new(key, s, digest_module).digest() + s
-    return value.encode("base64").replace("\n", "").replace(" ", "")
+    return b64encode(value).replace(b"\n", b"").replace(b" ", b"")
 
   def _decode(self, v):
     """decode cookie value *v* into an info object (or `None`)."""
     if not v: return
-    v = v.decode("base64")
+    v = b64decode(v)
     deserialize = self._deserialize
     if self.encrypt_cookies:
       decrypt = getUtility(IEncryption).decrypt
@@ -213,7 +215,7 @@ class SimpleSpsso(HomogenousContainer, Sso):
           pass
       return None # unable to understand the cookie
     else:
-      dl = hmac.new("", "", digest_module).digest_size
+      dl = hmac.new(b"", b"", digest_module).digest_size
       digest = v[:dl]; v = v[dl:]
       for k in self.__keys:
         if digest == hmac.new(k, v, digest_module).digest():
@@ -270,11 +272,15 @@ class SimpleSpsso(HomogenousContainer, Sso):
     kl = self.KEY_LENGTH
     try:
       from os import urandom
-      bytes = urandom(kl)
+      key_bytes = urandom(kl)
     except ImportError: # no "urandom"
       from random import randrange
-      bytes = [chr(randrange(256)) for i in range(kl)]
-    return "".join(bytes)
+      key_bytes = [randrange(256) for i in range(kl)]
+      if bytes is not str: # Python 2
+        key_bytes = b"".join(chr(b) for b in key_bytes)
+      else: # Python 3
+        key_bytes = bytes(key_bytes)
+    return key_bytes
 
   def clear_keys(self):
     del self.__keys[:]
@@ -325,10 +331,9 @@ def move_handler(o, e):
     sm.registerUtility(o, provided=ISimpleSpsso)
 
 
+@implementer(INameidFormatSupport)
 class NameidFormatSupport(object):
   """SPSSO name id format support."""
-  implements(INameidFormatSupport)
-
   def __init__(self, context): self.context = context
 
   def make_id(*args):

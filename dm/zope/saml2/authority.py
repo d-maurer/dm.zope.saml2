@@ -1,19 +1,19 @@
-# Copyright (C) 2011-2018 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """Authority and metadata."""
 from tempfile import NamedTemporaryFile
 
 from persistent import Persistent
-from persistent.list import PersistentList
 from persistent.mapping import PersistentMapping
 from AccessControl import ClassSecurityInfo
-#from Globals import InitializeClass
+#from AccessControl.class_init import InitializeClass
 
-from zope.interface import Interface, implements
+from zope.interface import Interface, implementer
 from zope.component import getUtility, ComponentLookupError
 from zope.event import notify
 from zope.lifecycleevent import ObjectModifiedEvent
 
 from OFS.SimpleItem import SimpleItem
+from App.version_txt import getZopeVersion
 
 import dm.xmlsec.binding as xmlsec
 
@@ -27,14 +27,15 @@ from dm.saml2.pyxb.metadata import EndpointType, IndexedEndpointType
 from dm.saml2 import signature
 from dm.saml2.util import utcnow
 
-from interfaces import ISamlAuthority, \
+from .interfaces import ISamlAuthority, \
      IIdpssoRole, ISpssoRole, IApRole, IAuthnRole, IPdpRole, \
      INameidFormatSupport, \
      IUrlCustomizer
 
-from permission import manage_saml
-from util import ZodbSynchronized
-from entity import ManageableEntityMixin, EntityManagerMixin
+from .permission import manage_saml
+from .util import ZodbSynchronized, getCharset
+from .entity import ManageableEntityMixin, EntityManagerMixin
+from .csrf import CsrfAwareOOBTree, csrf_safe_write, csrf_safe
 
 
 # Note: `EntityByUrl` lacks a way to access the context for signature
@@ -55,10 +56,9 @@ class IEntityMetadata(Interface):
 #  a persistent list for internal purposes.
 #  This is okay as long as we use a persistent storage (as we do).
 #  Not using persistent classes here leads to less ZODB loads.
+@implementer(IEntityMetadata)
 class EntityMetadata(EntityMetadata):
   """extend basic `EntityMetadata` by `ObjectModified` events."""
-  implements(IEntityMetadata)
-
   def default_validity(self):
     return getUtility(ISamlAuthority).default_validity
   default_validity = property(default_validity, lambda self, value: None)
@@ -100,6 +100,7 @@ class OwnEntity(ManageableEntityMixin, EntityBase):
     return getUtility(ISamlAuthority)
 
 
+@implementer(ISamlAuthority)
 class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
                     SimpleItem, SchemaConfigured, MetadataRepository
                     ):
@@ -114,10 +115,8 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
   """
   meta_type = "Saml authority"
 
-  implements(ISamlAuthority)
-
   INTERNAL_STORAGE_CLASS = PersistentMapping
-  METADATA_STORAGE_CLASS = PersistentMapping
+  METADATA_STORAGE_CLASS = CsrfAwareOOBTree
   METADATA_CLASS = EntityMetadata
 
   SC_SCHEMAS = (ISamlAuthority,)
@@ -133,6 +132,11 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
     {"label" : "Edit", "action" : "@@edit"},
     {"label" : "Metadata", "action" : "metadata"},
     ) + SimpleItem.manage_options
+
+##  if getZopeVersion().major >= 4:
+##    # we must do this stupidity to work around "https://github.com/zopefoundation/Zope/issues/506"
+##    manage_options += dict(label="unworking", action="manage_findForm"),
+##    def manage_findForm(self): raise NotImplementedError()
 
 
   def __init__(self, **kw):
@@ -162,7 +166,7 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
 
   def unregister_role_implementor(self, implementor):
     roles = self.roles; path = implementor.getPhysicalPath()
-    for r, ri in roles.items():
+    for r, ri in list(roles.items()):
       if ri == path: del roles[r]
     self._update()
 
@@ -301,6 +305,7 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
     sc = self._signature_cache
     if sc is None:
       sc = self._signature_cache = ZodbSynchronized()
+      csrf_safe_write(self)
     return sc
 
   def _get_signature_context(self, use):
@@ -321,7 +326,7 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
       #  to prevent an attempt to read it from the terminal
       #  We would like to use the *callback* parameter, but it
       #  does not work currently
-      self.private_key_password and str(self.private_key_password) or "fail",
+      self.private_key_password and self._to_bytes(self.private_key_password) or b"fail",
       ),
                 self.entity_id
                 )
@@ -347,6 +352,15 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
 
   # no harm is done, not to invalidate on "_delOb".
 
+  def _to_bytes(self, v):
+    return v if isinstance(v, bytes) else v.encode(getCharset(self))
+
+
+  # work around weakness of `dm.saml2.metadata.MetadataRepository`
+  @csrf_safe
+  def metadata_by_id(self, eid):
+    return super(SamlAuthority, self).metadata_by_id(eid)
+
 
 # no longer necessary
 #InitializeClass(SamlAuthority)
@@ -358,7 +372,10 @@ def move_handler(o, e):
   except ImportError: from zope.app.component.hooks import getSite
   site = getSite()
   if site is None:
-      raise ValueError("need a persistent active site")
+    if e.newParent is None:
+      # this is likely a global removal - let it succeed
+      return
+    raise ValueError("need a persistent active site")
   sm = site.getSiteManager()
   if e.oldParent:
     # prevent deletion when there are registered roles

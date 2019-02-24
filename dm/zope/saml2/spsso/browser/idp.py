@@ -1,6 +1,8 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """Idp related views."""
-from urllib import quote, unquote
+try: from urllib.parse import quote, unquote
+except ImportError: # Python 2
+  from urllib import quote, unquote
 
 from zope.schema import Choice, ASCIILine
 from zope.formlib.form import Fields, action

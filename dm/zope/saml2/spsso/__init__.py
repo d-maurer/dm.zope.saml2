@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """SPSSO role.
 
 The architecture for this role consists of the role itself and a
@@ -47,5 +47,5 @@ be available in the context of each plugin and the role.
 """
 
 def initialize(context):
-  from spsso import initialize; initialize(context)
-  from plugin import initialize; initialize(context)
+  from .spsso import initialize; initialize(context)
+  from .plugin import initialize; initialize(context)

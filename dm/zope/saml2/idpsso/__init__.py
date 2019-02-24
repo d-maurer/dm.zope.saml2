@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """Identity provider SSO.
 
 We assume to live inside a (Plone) portal and can rely on its login

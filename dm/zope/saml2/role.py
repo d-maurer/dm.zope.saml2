@@ -1,11 +1,11 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """Generic role infrastructure."""
 from logging import getLogger
 from os import environ
 
-from zope.interface import implements
-from zope.component import getUtility
-from BTrees.OOBTree import OOBTree
+from zope.interface import implementer
+from zope.interface.interfaces import ComponentLookupError
+from zope.component import getUtility, queryUtility
 from ExtensionClass import Base
 from Acquisition import Explicit
 
@@ -17,9 +17,10 @@ from dm.saml2.binding import SoapBinding, HttpPostBinding, HttpRedirectBinding
 from dm.saml2.util import normalize_nameid_format, utcnow, as_utc
 from dm.saml2.binding.util import Store, UnmanagedError, RelayStateManager
 
-from interfaces import ISamlAuthority, IHttpTransport, INameidFormatSupport, \
+from .interfaces import ISamlAuthority, IHttpTransport, INameidFormatSupport, \
      IRelayStateStore
-from exception import SamlError
+from .exception import SamlError
+from .csrf import CsrfAwareOOBTree
 
 logger = getLogger(__name__)
 
@@ -33,7 +34,7 @@ class Role(RelayStateManager):
   
   def __init__(self):
     RelayStateManager.__init__(
-      self, Store(IRelayStateStore(self, None) or OOBTree())
+      self, Store(IRelayStateStore(self, None) or CsrfAwareOOBTree())
       )
 
 
@@ -208,7 +209,7 @@ class Role(RelayStateManager):
       else:
         if not rd.NameIDFormat or unspecified in rd.NameIDFormat:
           # we can choose the format
-          format = supported[0]
+          format = list(supported)[0]
         else: return "InvalidNameIDPolicy"
     if sp is None: sp = teid
     return self._subject_from_member(member, sp, format, ok_create)
@@ -294,7 +295,8 @@ class Target(object):
       #  used by this role.
       from dm.saml2.util import child_values
       from dm.saml2.pyxb.metadata import EndpointType
-      from urlparse import urlsplit
+      try: from urllib.parse import urlsplit
+      except ImportError: from urlparse import urlsplit
       target_host = urlsplit(self.url)[1]
       ok = False
       for c in child_values(rd):
@@ -362,7 +364,18 @@ class ResponseContext(ConditionsCheckContext):
 
 ### automatic [un]registration on add/move/delete
 def move_handler(o, e):
-  auth = getUtility(ISamlAuthority)
+  if e.oldParent is not None and e.newParent is not None:
+    # for a move, different paths must be used in the
+    #  unregister/register calls below
+    #  it is even possible, that different authorities
+    #  are affected
+    raise NotImplementedError("move/rename not implemented")
+  auth = queryUtility(ISamlAuthority)
+  if auth is None:
+    if e.newParent is None:
+      # this is likely a global delete -- let it succeed
+      return
+    else: raise ComponentLookupError(ISamlAuthority, '')
   if e.oldParent:
     # unregister
     auth.unregister_role_implementor(o)
@@ -373,10 +386,9 @@ def move_handler(o, e):
 
 ###### NameID format support
 
+@implementer(INameidFormatSupport)
 class NameidFormatSupport(object):
   """Default name id format support."""
-  implements(INameidFormatSupport)
-
   def __init__(self, context): self.context = context
 
 

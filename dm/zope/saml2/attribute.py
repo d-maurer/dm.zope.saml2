@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """Attribute handling.
 
 Attributes occur in SAML2 in idp operations, sp operations and ap operations.
@@ -11,7 +11,7 @@ variant describing a requested attribute), a class managing attributes
 provider class."""
 from logging import getLogger
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from AccessControl import ClassSecurityInfo
 from OFS.SimpleItem import SimpleItem
@@ -23,11 +23,11 @@ from dm.zope.schema.z2.constructor import \
 
 from dm.saml2.util import xs_convert_to_xml
 
-from interfaces import IProvidedAttributeSchema, IRequestedAttributeSchema, \
+from .interfaces import IProvidedAttributeSchema, IRequestedAttributeSchema, \
      IItemSchema, IAttributeConsumingServiceSchema, \
      ISimpleAttributeProvider
-from permission import manage_saml
-from role import Role
+from .permission import manage_saml
+from .role import Role
 
 logger = getLogger(__name__)
 
@@ -42,10 +42,9 @@ class BaseAttribute(SchemaConfigured, SimpleItem):
     )
 
 
+@implementer(IRequestedAttributeSchema)
 class RequestedAttribute(BaseAttribute):
   meta_type = "Saml requested attribute"
-
-  implements(IRequestedAttributeSchema)
 
   SC_SCHEMAS = (IRequestedAttributeSchema,)
 
@@ -53,14 +52,14 @@ class RequestedAttribute(BaseAttribute):
   type = None
 
 
+@implementer(IProvidedAttributeSchema)
 class ProvidedAttribute(BaseAttribute):
   meta_type = "Saml provided attribute"
-
-  implements(IProvidedAttributeSchema)
 
   SC_SCHEMAS = (IProvidedAttributeSchema,)
 
 
+@implementer(IItemSchema)
 class HomogenousContainer(SchemaConfigured, Folder):
   """Abstract base class for the implementation of homogenous containers.
 
@@ -70,7 +69,6 @@ class HomogenousContainer(SchemaConfigured, Folder):
   does not use cooperative super calling.
   """
 
-  implements(IItemSchema)
   SC_SCHEMAS = (IItemSchema,)
 
   # to be overridden by derived classes
@@ -113,7 +111,9 @@ class HomogenousContainer(SchemaConfigured, Folder):
       # cannot use the name "HomogenourContainer" here as it is not yet bound
       scls = super(cls, cls)
     else: raise SystemError("class %s has not set `CONTENT_TYPE`" % str(cls))
-    scls.__class_init__.im_func(cls)
+    ci = scls.__class_init__
+    cif = getattr(ci, "__func__", ci)
+    cif(cls)
 
 
 class AttributeContainer(HomogenousContainer):
@@ -123,15 +123,16 @@ class AttributeContainer(HomogenousContainer):
   CONTENT_TYPE = ProvidedAttribute
 
 
+@implementer(IAttributeConsumingServiceSchema)
 class AttributeConsumingService(HomogenousContainer):
   meta_type = "Saml attribute consuming service"
 
-  implements(IAttributeConsumingServiceSchema)
   SC_SCHEMAS = (IAttributeConsumingServiceSchema,)
 
   CONTENT_TYPE = RequestedAttribute
 
 
+@implementer(ISimpleAttributeProvider)
 class SimpleAttributeProvider(AttributeContainer, Role):
   """Attribute provider.
 
@@ -140,7 +141,6 @@ class SimpleAttributeProvider(AttributeContainer, Role):
   """
   meta_type = "Saml attribute provider"
 
-  implements(ISimpleAttributeProvider)
   SC_SCHEMAS = ISimpleAttributeProvider,
 
   def _make_attribute_statement(self, target, req, subject, member, index):
@@ -173,10 +173,10 @@ class SimpleAttributeProvider(AttributeContainer, Role):
       if evaluator is None: v = member.getProperty(d.getId(), None)
       else: v = self.unrestrictedTraverse(evaluator)(member, d, eid)
       # Plone stupidly converts unicode properties to `str`
-      if isinstance(v, str) and d.type == "string":
+      if isinstance(v, bytes) and d.type == "string":
         # convert back to unicode
         from .util import getCharset
-        v = unicode(v, getCharset(self))
+        v = v.decode(getCharset(self))
       # potentially, more encodings are necessary
       xv = xs_convert_to_xml(d.type, v, AttributeValue)
       if not isinstance(xv, list): xv = xv,

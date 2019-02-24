@@ -1,14 +1,17 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """Utilities."""
 from zope.interface import alsoProvides
 from zope.component import getUtility
 from persistent import Persistent
 
+from .csrf import csrf_safe_write
+
 def datetime_rfc822(dt):
   """format *dt* as an rfc822 date in GMT."""
   # this should be easier!
   from time import mktime
-  from email.Utils import formatdate
+  try: from email.utils import formatdate
+  except ImportError: from email.Utils import formatdate
   
   return formatdate(mktime(dt.timetuple()), usegmt=True)
 
@@ -50,6 +53,7 @@ class ZodbSynchronized(Persistent):
   def invalidate(self):
     self._p_activate() # work around bug in some ZODB versions
     self._p_changed=True # ensure caches in other ZODB connections are flushed
+    csrf_safe_write(self)
     for k in self.__dict__.keys():
       if k.startswith("_v_"): delattr(self, k)
 

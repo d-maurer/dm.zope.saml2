@@ -1,4 +1,4 @@
-Copyright (C) 2010-2018 by Dr. Dieter Maurer <dieter@handshake.de>
+Copyright (C) 2010-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 D-66571 Bubach, Illtalstr. 25, Germany
 
 		All Rights Reserved

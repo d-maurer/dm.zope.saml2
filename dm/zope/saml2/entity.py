@@ -1,10 +1,13 @@
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """Entity management.
 
 We assume that our entities are schema configured and implement `IEntity`.
 """
-from urllib import quote, unquote
+try: from urllib.parse import quote, unquote
+except ImportError: # Python 2
+  from urllib import quote, unquote
 
-from zope.interface import Interface, implements
+from zope.interface import Interface, implementer
 from zope.schema import URI, TextLine
 
 from OFS.SimpleItem import SimpleItem
@@ -29,6 +32,7 @@ class IManageableEntity(IEntity):
 
 
 
+@implementer(IManageableEntity)
 class ManageableEntityMixin(SchemaConfigured, SimpleItem):
   """Mixin class to provide `SchemaConfigured` based manageability.
 
@@ -37,8 +41,6 @@ class ManageableEntityMixin(SchemaConfigured, SimpleItem):
 
   The instances expect to be managed inside a `MetadataRepository`.
   """
-  implements(IManageableEntity)
-
   manage_options = (
     {"label" : "Edit", "action" : "@@edit"},
     {"label" : "Update", "action" : "@@update"},
@@ -88,8 +90,8 @@ class IEntityByUrl(IManageableEntity):
 
 
 
+@implementer(IEntityByUrl)
 class EntityByUrl(ManageableEntityMixin, EntityByUrl):
-  implements(IEntityByUrl)
 
   meta_type = "Saml2 entity defined by metadata providing url"
 

@@ -1,18 +1,21 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 from datetime import timedelta
 
 from zope.interface import Interface, Attribute
 from zope.i18nmessageid import MessageFactory
-from zope.schema import ASCIILine, Password, Timedelta, Bool, Choice, \
+from zope.schema import ASCIILine, Password, Bool, Choice, \
      Timedelta, TextLine, Int, Text, \
-     Tuple
+     Tuple, URI, NativeStringLine
+
+from dm.zope.schema.schema import FilesystemPath, IriRef
+from dm.zope.schema.z2.schema import ItemPath
 
 from dm.saml2.util import SAML_CLASSES, normalize_class, \
      ATTRNAME_FORMATS, normalize_attrname_format, \
      XSCHEMA_BASE_TYPES, \
      NAMEID_FORMATS
 
-from util import vocab_from_urns
+from .util import vocab_from_urns
 
 _ = MessageFactory('dm_zope_saml2')
 
@@ -52,7 +55,7 @@ class IPdpRole(IRole):
 class IItemSchema(Interface):
   """the schema describing a base item (elementary Zope object).
 
-  It also has an id, manage outside.
+  It also has an id, managed outside.
   """
   title = TextLine(
     title=_(u"title_title", u"Title"),
@@ -63,7 +66,7 @@ class IItemSchema(Interface):
 
 class ISamlAuthoritySchema(IItemSchema):
   """Parameters configuring an Saml authority (aka entity)."""
-  entity_id = ASCIILine(
+  entity_id = IriRef(
     title=_(u'entity_id_title', u'Entity id'),
     description=
     _(u'entity_id_description',
@@ -71,7 +74,7 @@ class ISamlAuthoritySchema(IItemSchema):
     required=True,
     )
     
-  certificate = ASCIILine(
+  certificate = FilesystemPath(
     title=_(u'certificate_title', u'Certificate'),
     description=
     _(u'certificate_description',
@@ -80,7 +83,7 @@ class ISamlAuthoritySchema(IItemSchema):
     )
 
     
-  future_certificate = ASCIILine(
+  future_certificate = FilesystemPath(
     title=_(u'future_certificate_title', u'Future certificate'),
     description=
     _(u'future_certificate_description',
@@ -98,7 +101,7 @@ class ISamlAuthoritySchema(IItemSchema):
     required=False,
     )
 
-  private_key = ASCIILine(
+  private_key = FilesystemPath(
     title=_(u'private_key_title', u'Private key'),
     description=
     _(u'private_key_description',
@@ -115,7 +118,7 @@ class ISamlAuthoritySchema(IItemSchema):
     required=False
     )
 
-  base_url = ASCIILine(
+  base_url = URI(
     title=_(u'base_url_title', u'Base url'),
     description=
     _(u'base_url_description',
@@ -262,7 +265,7 @@ class IAttributeConsumingServiceSchema(IItemSchema):
     default=False,
     )
 
-  language = ASCIILine(
+  language = NativeStringLine(
     title=_(u"attribute_consuming_service_language_title", u"Language"),
     description=_(
       u"attribute_consuming_service_language_description",
@@ -281,7 +284,7 @@ class IAttributeConsumingServiceSchema(IItemSchema):
     required = False,
     )
 
-  extends = ASCIILine(
+  extends = NativeStringLine(
     title=_(u"attribute_consuming_service_extends_title", u"Extends"),
     description=_(
       u"attribute_consuming_service_extends_description",
@@ -376,7 +379,7 @@ class ISimpleSpSchema(ISamlRoleSchema):
     required=False,
     )
 
-  cookie_path = ASCIILine(
+  cookie_path = ItemPath(
     title=_(u"cookie_path_title", u"Cookie path"),
     description=_(u"cookie_path_description",
                   u"Path used for all cookies"),
@@ -384,14 +387,14 @@ class ISimpleSpSchema(ISamlRoleSchema):
     default="/"
     )
 
-  cookie_domain = ASCIILine(
+  cookie_domain = NativeStringLine(
     title=_(u"cookie_domain_title", u"Cookie domain"),
     description=_(u"cookie_domain_description",
                   u"Domain used for all cookies"),
     required=False,
     )
 
-  session_cookie_name = ASCIILine(
+  session_cookie_name = NativeStringLine(
     title=_(u"session_cookie_name_title", u"Session cookie name"),
     description=_(u"session_cookie_name_description",
                   u"The name of the cookie representing the authentication information"),
@@ -399,7 +402,7 @@ class ISimpleSpSchema(ISamlRoleSchema):
     default="_saml2_session",
     )
 
-  attribute_cookie_name = ASCIILine(
+  attribute_cookie_name = NativeStringLine(
     title=_(u"attribute_cookie_name_title", u"Attribute cookie name"),
     description=_(u"attribute_cookie_name_description",
                   u"The name of the cookie holding SAML2 attribute information"),
@@ -459,11 +462,12 @@ class ISimpleSpssoPluginSchema(IItemSchema):
     default="idp_id",
     )
 
-  idp_cookie_path = ASCIILine(
+  idp_cookie_path = ItemPath(
     title=_(u"idp_cookie_path_title", u"Identity provider cookie path"),
     description=_(u"idp_cookie_path_description",
                   u"The path of the cookie used to remember the user's identity provider; defaults to the portal"),
     required=False,
+    default="/",
     )
 
   idp_cookie_domain = ASCIILine(
@@ -481,7 +485,7 @@ class ISimpleSpssoPluginSchema(IItemSchema):
     default=timedelta(360), # 1 year
     )
 
-  default_idp = ASCIILine(
+  default_idp = IriRef(
     title=_(u"default_idp_title", u"Default identity provider"),
     description=_(u"default_idp_description",
                   u"The idp used as default in idp selection"),

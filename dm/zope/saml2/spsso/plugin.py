@@ -1,12 +1,12 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
 """PAS plugins for SAML2 based authentication (Spsso)."""
 from datetime import datetime
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from AccessControl import ClassSecurityInfo
+from AccessControl.class_init import InitializeClass
 from ZTUtils import make_query
-from Globals import InitializeClass
 
 from Products.CMFCore.utils import getToolByName
 from Products.PluggableAuthService.interfaces.plugins \
@@ -25,9 +25,10 @@ from dm.zope.saml2.util import datetime_rfc822
 from dm.zope.saml2.interfaces import ISimpleSpssoPluginSchema, \
      ISimpleSpsso
 
-from spsso import SimpleSpsso
+from .spsso import SimpleSpsso
 
 
+@implementer(ISimpleSpssoPluginSchema)
 class DetachedSimpleSpssoPlugin(BasePlugin, SchemaConfigured):
   """Spsso plugin working with a separate `Spsso`."""
 
@@ -36,8 +37,6 @@ class DetachedSimpleSpssoPlugin(BasePlugin, SchemaConfigured):
   security = ClassSecurityInfo()
   security.declareObjectProtected(manage_saml)
   security.declarePublic("login")
-
-  implements(ISimpleSpssoPluginSchema)
 
   manage_options = (
     {"label" : "View", "action" : "@@view"},
@@ -120,14 +119,15 @@ class DetachedSimpleSpssoPlugin(BasePlugin, SchemaConfigured):
 
   def getPropertiesForUser(self, user, request=None):
     info = self.get_spsso().get_attributes(self.REQUEST) or {}
-    # the stupid Plone is unable to handle unicode properties
-    #  must encode them
-    from ..util import getCharset
-    charset = getCharset(self)
-    for k,v in info.items():
-      if isinstance(v, unicode): info[k] = v.encode(charset)
-      elif v and isinstance(v, (tuple, list)) and isinstance(v[0], unicode):
-        info[k] = [c.encode(charset) for c in v]
+    if str is bytes: # Python 2
+      # the stupid Plone is unable to handle unicode properties
+      #  must encode them
+      from ..util import getCharset
+      charset = getCharset(self)
+      for k,v in info.items():
+        if isinstance(v, unicode): info[k] = v.encode(charset)
+        elif v and isinstance(v, (tuple, list)) and isinstance(v[0], unicode):
+          info[k] = [c.encode(charset) for c in v]
     # more conversion might need to become necessary
     return info
 

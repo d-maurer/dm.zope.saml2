@@ -408,6 +408,19 @@ There are hints that you must at least include in the import
 the local component registry where the SAML authority has registered with.
 
 
+Copying/Renaming/Deleting
+=========================
+
+The current version does not support copying and renaming of SAML
+configuration objects.
+
+For a deletion, you must (usually) first delete the role objects associated
+with an authority object before you can delete the authority object.
+Global deletions (which delete roles and authority together)
+may or may not succeed dependent on the order in which the individual
+objects are deleted internally.
+
+
 Text handling
 =============
 
@@ -439,9 +452,29 @@ your must register a `dm.zope.saml2.util.ICharset` adapter for the
 portal root returning the charset used for the portal.
 
 
+
+
 =======
 History
 =======
+
+5.0
+
+  Python 3/Zope 4/Plone 5.2 compatibility
+
+  Improved integration with ``plone.protect``'s CSRF protection.
+  **ATT** This version uses new CSRF aware data structures for
+  entity and relay state management. If you upgrade from an
+  earlier version, you may need to rebuild your SAML2 related
+  configuration objects to profit from this better integration.
+
+  Note: at the time of this release,
+  "https://github.com/plone/Products.CMFPlone/issues/2771"
+  still prevented correct use in Plone 5.2.
+
+  No longer tested against Zope 2 (only Zope 4).
+  Neverthelss, it might work with Zope 2.
+
 
 4.0
 

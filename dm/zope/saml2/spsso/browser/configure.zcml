@@ -3,7 +3,6 @@
     xmlns:browser="http://namespaces.zope.org/browser"
     >
 
-    <!-- hope this will work for derived classes, too; if not, introduce an auxiliary interface -->
     <browser:page
       name="saml_select_idp"
       for="..plugin.DetachedSimpleSpssoPlugin"
@@ -11,12 +10,23 @@
       permission="zope.Public"
       />
 
-    <!-- hope this will work for derived classes, too; if not, introduce an auxiliary interface -->
     <browser:page
       name="saml_failure"
       for="..plugin.DetachedSimpleSpssoPlugin"
       class=".failure.Failure"
       permission="zope.Public"
       />
+
+    <!-- fixup for `zope.formlib` -->
+    <configure package="zope.formlib">
+      <adapter
+          for="zope.schema.interfaces.ITuple
+               zope.schema.interfaces.IVocabularyTokenized
+               zope.publisher.interfaces.browser.IBrowserRequest"
+          provides="zope.formlib.interfaces.ISimpleInputWidget"
+          factory=".widgets.OrderedMultiSelectWidget"
+          permission="zope.Public"
+          />
+    </configure>
 
 </configure>
