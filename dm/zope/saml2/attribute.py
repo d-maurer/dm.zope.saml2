@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2020 by Dr. Dieter Maurer <dieter@handshake.de>
 """Attribute handling.
 
 Attributes occur in SAML2 in idp operations, sp operations and ap operations.
@@ -21,7 +21,7 @@ from dm.zope.schema.schema import SchemaConfigured
 from dm.zope.schema.z2.constructor import \
      add_form_factory, SchemaConfiguredZmiAddForm
 
-from dm.saml2.util import xs_convert_to_xml
+from dm.saml2.util import normalize_attrname_format, xs_convert_to_xml
 
 from .interfaces import IProvidedAttributeSchema, IRequestedAttributeSchema, \
      IItemSchema, IAttributeConsumingServiceSchema, \

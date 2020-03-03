@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2012 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2020 by Dr. Dieter Maurer <dieter@handshake.de>
 """Role views."""
 from logging import getLogger
 
@@ -11,6 +11,7 @@ from dm.saml2.binding.httpredirect import decode as redirect_decode
 from dm.saml2.binding.httppost import decode as post_decode
 from dm.saml2.pyxb.protocol import CreateFromDocument
 
+from dm.zope.saml2.exception import SamlError
 from dm.zope.saml2.role import logging_enabled
 
 logger = getLogger(__name__)

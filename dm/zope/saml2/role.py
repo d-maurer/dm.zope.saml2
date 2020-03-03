@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2020 by Dr. Dieter Maurer <dieter@handshake.de>
 """Generic role infrastructure."""
 from logging import getLogger
 from os import environ
@@ -244,7 +244,7 @@ class Role(RelayStateManager):
   def soap_request(self, msg, relay_state):
     from dm.saml2.binding.soap import http_post
 
-    return http_post(getUtility(IHtmlTransport), msg.Destination, msg)
+    return http_post(getUtility(IHttpTransport), msg.Destination, msg)
 
   def soap_response(self, msg, relay_state): return msg
 
