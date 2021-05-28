@@ -77,7 +77,7 @@ class SimpleIdpsso(SimpleItem, SchemaConfigured, Sso):
         # we only support `AuthnContextClassRef`.
         return self._failAuthnRequest(req, relay_state, "RequestUnsupported", "AuthnContextDeclRef")
       if not self._supported_authn_context_class(ac.AuthnContextClassRef):  
-        return self._failAuthRequest(req, relay_state, "NoAuthnContext")
+        return self._failAuthnRequest(req, relay_state, "NoAuthnContext")
     # check name id policy
     nip = req.NameIDPolicy
     if nip and not self._supported_nameid_policy(nip):
