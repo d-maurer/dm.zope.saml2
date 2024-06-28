@@ -1,0 +1,9 @@
+*.egg-info/
+*.mo
+*.pyc
+*.pyo
+*~
+*.so
+*.o
+build/lib.linux*
+
