@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2020 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2024 by Dr. Dieter Maurer <dieter.maurer@online.de>
 """Generic role infrastructure."""
 from logging import getLogger
 from os import environ
@@ -401,7 +401,7 @@ class NameidFormatSupport(object):
     normalize_nameid_format("unspecified"):_unspecified,
     }
 
-  supported = _dispatcher.keys()
+  supported = tuple(_dispatcher.keys())
 
 
 ######### Logging control

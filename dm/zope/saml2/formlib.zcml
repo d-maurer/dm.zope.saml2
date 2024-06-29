@@ -1,0 +1,19 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+    <include package="five.formlib" />
+
+    <!-- fixup for `zope.formlib` -->
+    <configure package="zope.formlib">
+      <adapter
+          for="zope.schema.interfaces.ITuple
+               zope.schema.interfaces.IVocabularyTokenized
+               zope.publisher.interfaces.browser.IBrowserRequest"
+          provides="zope.formlib.interfaces.ISimpleInputWidget"
+          factory=".widgets.OrderedMultiSelectWidget"
+          permission="zope.Public"
+          />
+    </configure>
+
+    <adapter factory=".formlib.vocab2terms"/>
+  
+</configure>
+

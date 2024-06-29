@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:EntityDescriptor
+  entityID="feid"
+  xmlns="http://www.w3.org/2000/09/xmldsig#"
+  xmlns:ns2="urn:oasis:names:tc:SAML:2.0:metadata"
+  >
+  <ns2:SPSSODescriptor WantAssertionsSigned="true"
+    protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <ns2:KeyDescriptor use="signing">
+      <KeyInfo>
+	<X509Data>
+		<X509Certificate>
+MIIEATCCAumgAwIBAgIUOU6X01OZCNJoS+/PtacvhMKKDRswDQYJKoZIhvcNAQEFBQAwgY4xCzAJ
+BgNVBAYTAkRFMRMwEQYDVQQIDApTb21lLVN0YXRlMRIwEAYDVQQHDAlFcHBlbGJvcm4xFjAUBgNV
+BAoMDURpZXRlciBNYXVyZXIxFjAUBgNVBAMMDWRpZXRlci5tYXVyZXIxJjAkBgkqhkiG9w0BCQEW
+F2RpZXRlci5tYXVyZXJAb25saW5lLmRlMCAXDTI0MDYyNzEzNDE1NloYDzIwNTExMTEzMTM0MTU2
+WjCBjjELMAkGA1UEBhMCREUxEzARBgNVBAgMClNvbWUtU3RhdGUxEjAQBgNVBAcMCUVwcGVsYm9y
+bjEWMBQGA1UECgwNRGlldGVyIE1hdXJlcjEWMBQGA1UEAwwNZGlldGVyLm1hdXJlcjEmMCQGCSqG
+SIb3DQEJARYXZGlldGVyLm1hdXJlckBvbmxpbmUuZGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+ggEKAoIBAQDcnldUb7DtbaZnHReFs/FKFkDaVFR+bo2OsQErqYn4Ph4Crp9CdD5KFkbvLlALICCp
+P3Lfb+O5b9HuLFTnEOqIWkw5bT7z56DVLirJWjKBa7eQulfaAiRwt4SIVx+Pf5Fsj01kRLSP3tEm
+FN/bYgeCrYt31Sz70ybyqEKR4SYLz3pWIhZDOAwnM8N2tBgT4GtRa59+42k7Nx7sak69578sO0nY
+3YjCbOU8mqHcWttEPf0WZXlSDBA9Ooyk3FiRKB9iaUagJRv1GP6389Pu+NZFnsqS/PgDpUVLyyYb
+4C0fgLZ2cxG1SQHX857oK71LxXOhmQYcO+UyS9/61EUu+OGrAgMBAAGjUzBRMB0GA1UdDgQWBBQ4
+kKZ/SusBFRZ5WOXaK1C2uMJiLTAfBgNVHSMEGDAWgBQ4kKZ/SusBFRZ5WOXaK1C2uMJiLTAPBgNV
+HRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBBQUAA4IBAQCgsomp9Nrh5lMWY9RJv0VE7KbZVKEv1frA
+C70QcaRPH/I+m4dsICdUCPzPdMQ6pwD4mf8eJ/MNOHlPx5UttkLYo8ucROZe+YhBDYCYekGy+m4T
+rC4f3aR325QWPAcfr4zyf1uL+DB4lBSF8AiWpeCTH7yrtm+PkPRe85TIzqVGIEtkJNnGbeOJ3R+O
+4DTnkiMJUWTRqOLawELiV6pviDNBVPhQwnzp5qlpGsw6FyQ2JAhLi4SwhJpVa3Vmnmk0mQ5w7EGk
+01108yIo9Utxi4TdzvUiD7gnzr1Np8YQ3nXpRkV5OLg324/yrfakEGC3tMQEv41JttHcEqjYi0Jc
+UIRK
+		</X509Certificate>
+	</X509Data>
+      </KeyInfo>
+    </ns2:KeyDescriptor>
+    <ns2:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</ns2:NameIDFormat>
+    <ns2:AssertionConsumerService index="1" isDefault="true"
+      Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+      Location="https://localhost/sp"/>
+    <ns2:AttributeConsumingService index="1" isDefault="true">
+      <ns2:ServiceName xml:lang="en">Test</ns2:ServiceName>
+      <ns2:RequestedAttribute Name="urn:oasis:names:tc:SAML:attribute:subject-id" FriendlyName="subject-id" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" isRequired="false"/>
+    </ns2:AttributeConsumingService>
+  </ns2:SPSSODescriptor>
+</ns2:EntityDescriptor>
+

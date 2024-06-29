@@ -70,7 +70,21 @@ class ManageableEntityMixin(SchemaConfigured, SimpleItem):
     #  forbidden in Zope ids
     return _quote(self.id)
 
-  def _setId(self, id): self.id = id
+  def _setId(self, id):
+    # Note: this sets the entity id, not the item id
+    self.id = id
+
+  # work around a bug in `OFS.Traversable.Traversable.getPhysicalPath`
+  # which insists on using `ob.id` over `ob.getId()`
+  @property
+  def id(self):
+    id = self.__dict__.get("id") # the entity id
+    if id is None: raise AttributeError("id")
+    from sys import _getframe
+    return _quote(id) if _getframe(1).f_code.co_name == "getPhysicalPath" else id
+
+  @id.setter
+  def id(self, v): self.__dict__["id"] = v
 
   # implement `title` as `specified_title or id`.
   def _get_title(self): return self.specified_title or self.id

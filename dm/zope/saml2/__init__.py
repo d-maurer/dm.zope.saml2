@@ -2,13 +2,13 @@
 """SAML2 support."""
 
 def initialize(context):
-  from .authority import SamlAuthority
+  from .authority import SamlAuthority, AuthorityAddForm
   from .permission import manage_saml
   from dm.zope.schema.z2.constructor import add_form_factory, SchemaConfiguredZmiAddForm
 
   context.registerClass(
     SamlAuthority,
-    constructors=(add_form_factory(SamlAuthority, form_class=SchemaConfiguredZmiAddForm),),
+    constructors=(add_form_factory(SamlAuthority, form_class=AuthorityAddForm),),
     permission=manage_saml,
     )
 

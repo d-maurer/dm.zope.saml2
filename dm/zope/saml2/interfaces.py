@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2024 by Dr. Dieter Maurer <dieter.maurer@online.de>
 from datetime import timedelta
 
 from zope.interface import Interface, Attribute
@@ -122,11 +122,11 @@ class ISamlAuthoritySchema(IItemSchema):
     title=_(u'base_url_title', u'Base url'),
     description=
     _(u'base_url_description',
-      u"""A Zope system is often used via different urls (e.g. direct versus indirectly via a Web server).
-      The urls of internal objects change accordingly. The authority generates
-      and distributes metadata involving url. These must remain
-      reliably and not change inadvertantly. Therefore, the base url is
-      not derived automatically from the (varying) urls but specified by this attribute."""),
+      u"""Used to generate the urls in metadata.
+      It typically has the
+      form "*protocol*://*host*" (e.g. `https://myhost`),
+      the urls in generated metadata get the form
+      "*base_url*/*path_to_object*"."""),
     required=True,
     )
 

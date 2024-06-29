@@ -1,0 +1,67 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    >
+
+   <five:registerPackage package="." initialize=".initialize" />
+
+   <include package="dm.zope.schema" file="timedelta.zcml" />
+
+   <include file="permission.zcml" />
+   <include package=".browser" />
+   <include package=".spsso" />
+
+   <subscriber
+     for=".authority.SamlAuthority
+          .interfaces.IObjectMovedEvent"
+     handler=".authority.move_handler"
+     />
+
+   <subscriber
+     for=".interfaces.IRole
+          .interfaces.IObjectMovedEvent"
+     handler=".role.move_handler"
+     />
+
+   <!-- changes to own metadata -->
+   <subscriber
+     for=".authority.SamlAuthority
+          zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+     handler=".authority.own_metadata_changed"
+     />
+
+   <subscriber
+     for=".interfaces.IRole
+          zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+     handler=".authority.own_metadata_changed"
+     />
+
+   <subscriber
+     for=".interfaces.IBaseAttributeSchema
+          zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+     handler=".authority.own_metadata_changed"
+     />
+
+   <!-- we assume that attributes are not moved across different authorities -->
+   <subscriber
+     for=".interfaces.IBaseAttributeSchema
+          .interfaces.IObjectMovedEvent"
+     handler=".authority.own_metadata_changed"
+     />
+
+   <!-- signature context invalidation -->
+   <subscriber
+     for=".authority.EntityMetadata
+          zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+     handler=".authority.signature_context_changed"
+     />
+
+   <!-- name id format support -->
+   <adapter
+     for=".interfaces.IRole"
+     provides=".interfaces.INameidFormatSupport"
+     factory=".role.NameidFormatSupport"
+     />
+
+
+</configure>

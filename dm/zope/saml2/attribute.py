@@ -1,4 +1,4 @@
-# Copyright (C) 2011-2020 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2024 by Dr. Dieter Maurer <dieter.maurer@online.de>
 """Attribute handling.
 
 Attributes occur in SAML2 in idp operations, sp operations and ap operations.
@@ -147,12 +147,7 @@ class SimpleAttributeProvider(AttributeContainer, Role):
     eid = target.eid or req.Issuer.value()
     auth = self._get_authority()
     md = auth.metadata_by_id(eid).get_recent_metadata()
-    for sp in md.SPSSODescriptor:
-      for acs in sp.AttributeConsumingService:
-        if index is None and acs.isDefault or index == acs.index: break
-      else: acs = None
-      if acs is not None: break
-    else: acs = None
+    acs = self._attribute_consuming_service(md, index)
     if acs is None:
       if index is None: return # nothing to do
       logger.error("could not locate acs %d for %s" % (index, eid))
@@ -199,3 +194,23 @@ class SimpleAttributeProvider(AttributeContainer, Role):
                   FriendlyName=ad.id,
                   )
         )
+
+  @staticmethod
+  def _attribute_consuming_service(md, index=None):
+    """select the effective attribute consuming service or ``None``."""
+    for sp in md.SPSSODescriptor: # we expect there is at most one
+      for acs in sp.AttributeConsumingService:
+        if index is None and acs.isDefault or index == acs.index: break
+      else:
+        acss = sp.AttributeConsumingService
+        if index is None and acss:
+          # implement ``E87``
+          # we know: no `isDefault` is true
+          # take the first ``acs`` without ``isDefault``
+          for acs in acss:
+            if getattr(acs, "isDefault", None) is None: break
+          else: acs = acss[0] # take the first one
+        else: acs = None
+      if acs is not None: break
+    else: acs = None
+    return acs

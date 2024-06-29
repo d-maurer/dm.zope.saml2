@@ -1,4 +1,4 @@
-This package supports SAML2 based SSO (Single Sign-On) for Zope2/Plone
+This package supports SAML2 based SSO (Single Sign-On) for Zope/Plone
 installations.
 
 While it currently supports only a small subset of the
@@ -212,47 +212,66 @@ and *eid* the entity identifier who should get the information.
 Dependencies
 ============
 
-The package depends on ``Zope2``. It was tested
-both with Zope 2.10 and Zope 2.13 (therefore, it is expected to
-work with the intermediate versions as well). For Zope versions from
-2.12 onward, you must ensure that ``five.formlib`` is installed (as
-Zope 2.12 dropped ``zope.formlib`` support from the core; it was
-moved into a the separate package ``five.formlib``).
+The package depends on ``Zope``. It was tested with Zope 4.x (more
+precisely ``Plone 5.2.13``).
 
-Note that one of the dependencies (``pyxb`` in version 1.1.4) has 
-problems to get installed via package managers with Python versions before
-2.6. This makes some problems with Zope 2.10 and 2.11. Consult
-the dependecies section of ``dm.saml2`` to learn how you can work
-around this problem.
+There are other complex dependencies sketched in section
+"Installation".
 
 
 ============
 Installation
 ============
 
-You must install the code for the package and
-ensure that the package's ZCML definitions are interpreted on
-Zope startup. In addition, you must ensure that on Zope startup,
-the ``xmlsec`` library is initialized
-(by calling ``dm.xmlsec.binding.initialize()``).
+Unfortunately, the installation for this package is complex
+due to dependencies on packages with complex installations.
 
-In order to learn details about ``xmlsec`` signing/verification
-failures, you might want to use ``dm.xmlsec.binding.set_error_callback``
-to let those details be logged (for details, consult
-the ``dm.xmlsec.binding`` documentation).
+For itself, the installation entails: install the code
+and ensure that its ZCML definitions are activated on startup.
 
-In the case that you are using ``zc.buildout`` for your Zope2 installation,
-then the installation steps can be summarized as follows:
+Problematic dependencies are sketched below. See the
+installation instructions of the respective package for details.
 
-  *  extend the ``eggs`` definition in your ``buildout.cfg``
-     by ``dm.zope.saml2`` and (in case you are using Zope2 >= 2.12)
-     by ``five.formlib``.
 
-  *  extend the ``zcml`` definition in your ``buildout.cfg``
-     by ``dm.zope.saml2``.
+``dm.xmlsec.binding``
+=====================
 
-  *  ensure ``dm.xmlsec.binding.initialize()`` gets called
-     on Zope startup.
+This package integrates ``lxml`` and the "XML security library"
+(often called something like ``libxmlsec``) both based
+on ``libxml2``.
+It supports signatures for XML documents (as required by SAML).
+
+To get it installed, you need a C-development environment
+and an installation of the "XML security library" adequate for
+development.
+
+It is important that the ``lxml`` installation does not contain
+a static copy of ``libxml2`` but links it dynamically.
+This usually excludes binary distributions from ``PyPI``
+(they contain ``libxml2`` statically to reduce the installation
+requirements); OS level ``lxml`` installations are likely acceptable.
+
+``dm.xmlsec.binding`` must be initialized (calling its ``initialize``
+function). For modern versions, this must happen
+before the ZCML registrations for ``dm.zope.saml2`` are executed.
+Should you see "Transform" related import problems on startup,
+then the initialization has not been early enough.
+
+
+``dm.saml2``
+============
+
+``dm.saml2`` depends on
+``PyXB``. Unfortunately, the original ``PyXB`` author has abandoned
+its development and there is no longer a distribution compatible
+with modern Python versions. As a consequence, ``dm.saml2`` no
+longer declares its ``PyXB`` dependency. You must
+ensure that a ``PyXB`` like distribution with SAML2 bundles
+is installed. For details, consult the ``dm.saml2`` documentation.
+
+
+"formlib" related problems
+==========================
 
 The default ``zope.formlib`` support for ``Password`` fields
 is very bad (it carefully hides the password on edits
@@ -260,15 +279,28 @@ but displays it in clear text on views; it forces
 you to reenter the password anew whenever you save the form).
 To get decent handling of ``Password`` fields, you may
 want to activate the ZCML overrides of package ``dm.zope.schema``.
-If you are using ``zc.buildout``. you can achieve this
-by extending the ``zcml`` definition in your ``buildout.cfg``
-by ``dm.zope.schema-overrides``.
 
-SAML2 stives hard for security. Therefore, it is virtually
+"formlib" integration is often incomplete.
+Especially, it is not sufficiently complete for ``dm.zope.saml2``.
+Extensions are necessary.
+Unfortunately, other applications and components, too,
+might require extensions and those may conflict with ours.
+To facilitate handling of those caaes, our
+"formlib" extensions are registered in ``formlib.zcml``.
+If they make problems, use the ZCML registrations from
+``core.zcml`` rather than ``configure.zcml`` (this excludes
+the ``formlib`` extensions) and integrate the
+required "formlib" extensions yourself.
+
+
+Digital signatures
+==================
+
+SAML2 strives hard for security. Therefore, it is virtually
 impossible to use SAML2 in an identify provider
 without digital signatures. The
 digital signatures are used to prevent tempering with SAML2 messages
-and to authenticate the cooperationg SAML2 authorities.
+and to authenticate the cooperating SAML2 authorities.
 To effectively use SAML2 for an identity provider, you will need a certificate
 and an associated private key such that the authentication assertions
 can be properly signed. A certificate can be obtained from a
@@ -283,11 +315,20 @@ a certificate may not be necessary (this depends on the identity providers
 you want to cooperate with; if they (all) accept unsigned authentication
 requests, a private key/certificate pair is not necessary).
 
-In case, the interaction between SAML entities poses problems,
+
+Analysing problems
+==================
+
+In case the interaction between SAML entities poses problems,
 the logging facility of ``dm.zope.saml2`` can be helpful.
 Logging is enabled by setting the envvar ``SAML2_ENABLE_LOGGING``
 to a non empty value. It causes all incoming and outgoing SAML
 messages to be logged on level ``INFO``.
+
+In order to learn details about ``xmlsec`` signing/verification
+failures, you might want to use ``dm.xmlsec.binding.set_error_callback``
+to let those details be logged (for details, consult
+the ``dm.xmlsec.binding`` documentation).
 
 
 =============
@@ -335,7 +376,7 @@ accessed in the normal Zope way (i.e. via acquisition);
 therefore, the normal methods to determine an url do not work
 (reliably). The second reason comes from the fact that a Zope
 installation can often be accessed via different urls (e.g.
-an internal one and one via a virtual host and that the metadata is
+an internal one and one via a virtual host) and that the metadata is
 cached; the cached urls in the metadata must ensure they are valid
 for all cases and therefore must not depend on the specific request
 url that accidentally lead to their creation. To work around
@@ -400,7 +441,7 @@ interdependencies (such as the SAML configuration object set).
 It is known that SAML authority objects raise an exception when
 you try to import them. There are hints that imported identity and
 service provider objects fail to properly register themselves with
-the autority.
+the authority.
 
 I do not know whether you can correctly import the whole
 configuration structure as part of a common container object.
@@ -457,6 +498,28 @@ portal root returning the charset used for the portal.
 =======
 History
 =======
+
+5.1
+
+  Fix some (minor) Python 3 incompatibilities
+
+  Fix (minor) problem during entity creation when its
+  name contains special characters
+
+  Fix: honour metadata validity to avoid using stale key/certificate
+  information for signature processing
+
+  Fix ``@@view`` problems due to incomplete "formlib" integration
+  (indicated by ``ComponentLookupError``)
+
+  Implement ``E87: Clarify default rules for <md:AttributeConsumingService>``
+  of ``saml-v2.0-errata05-os.pdf``.
+
+  Slightly modularize the top level ``configure.zcml`` to allow
+  deployers an easier ``formlib`` related problem resolution
+
+  Support signatures for the ``http-redirect`` binding
+
 
 5.0
 

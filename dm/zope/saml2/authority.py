@@ -1,11 +1,14 @@
-# Copyright (C) 2011-2019 by Dr. Dieter Maurer <dieter@handshake.de>
+# Copyright (C) 2011-2024 by Dr. Dieter Maurer <dieter.maurer@online.de>
 """Authority and metadata."""
 from tempfile import NamedTemporaryFile
+from copy import copy
 
 from persistent import Persistent
 from persistent.mapping import PersistentMapping
+from Acquisition import Explicit
 from AccessControl import ClassSecurityInfo
-#from AccessControl.class_init import InitializeClass
+from BTrees.OOBTree import OOBTree
+from OFS.Traversable import path2url
 
 from zope.interface import Interface, implementer
 from zope.component import getUtility, ComponentLookupError
@@ -33,7 +36,7 @@ from .interfaces import ISamlAuthority, \
      IUrlCustomizer
 
 from .permission import manage_saml
-from .util import ZodbSynchronized, getCharset
+from .util import Volatile, getCharset
 from .entity import ManageableEntityMixin, EntityManagerMixin
 from .csrf import CsrfAwareOOBTree, csrf_safe_write, csrf_safe
 
@@ -60,7 +63,7 @@ class IEntityMetadata(Interface):
 class EntityMetadata(EntityMetadata):
   """extend basic `EntityMetadata` by `ObjectModified` events."""
   def default_validity(self):
-    return getUtility(ISamlAuthority).default_validity
+    return getUtility(ISamlAuthority).metadata_validity
   default_validity = property(default_validity, lambda self, value: None)
 
   def fetch_metadata(self, *args, **kw):
@@ -177,7 +180,8 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
   def _update(self):
     """Something important has changed. Invalidate cached data."""
     self.metadata_by_id(self.entity_id).clear_metadata() # recreated on next use
-    self._get_signature_cache().invalidate()
+    del self._get_keys_manager()[self.entity_id]
+
 
   def _export_own_metadata(self):
     """recompute our own metadata."""
@@ -200,7 +204,7 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
           # build key_info
           from pyxb.bundles.wssplat.ds import KeyInfo, X509Data
           # this assumes the file to contain a (binary) X509v3 certificate
-          cert = open(c, "rb").read()
+          with open(c, "rb") as f: cert = f.read()
           x509 = X509Data(); x509.X509Certificate = [cert]
           key_info = KeyInfo(); key_info.X509Data = [x509]
           rd.KeyDescriptor.append(
@@ -296,59 +300,31 @@ class SamlAuthority(SchemaConfiguredEvolution, EntityManagerMixin,
   def _get_url(self, obj):
     customizer = IUrlCustomizer(self, None)
     if customizer is not None: return customizer.url(obj)
-    return self.base_url + "/" + obj.absolute_url(True)
+    pp = obj.getPhysicalPath()
+    return self.base_url + "/" + path2url(pp[1:])
 
   ## signature support
-  _signature_cache = None
+  _keys_manager = None
 
-  def _get_signature_cache(self):
-    sc = self._signature_cache
-    if sc is None:
-      sc = self._signature_cache = ZodbSynchronized()
+  def _get_keys_manager(self):
+    if self._keys_manager is None:
+      self._keys_manager = _KeysManager()
       csrf_safe_write(self)
-    return sc
+    return self._keys_manager
 
   def _get_signature_context(self, use):
-    sc = self._get_signature_cache()
     vuse = "_v_" + use
-    ctx = getattr(sc, vuse, None)
+    ctx = getattr(self, vuse, None)
     if ctx is None:
-      ctx = signature.SignatureContext()
-      getattr(self, "_add_%s_keys" % use)(ctx)
-      setattr(sc, vuse, ctx)
+      ctx = signature.SignatureContext(self._get_keys_manager())
+      setattr(self, vuse, ctx)
     return ctx
 
-  def _add_sign_keys(self, ctx):
-    ctx.add_key(xmlsec.Key.load(
-      _make_absolute(self.private_key),
-      xmlsec.KeyDataFormatPem,
-      # if we have no private key password, pass some value
-      #  to prevent an attempt to read it from the terminal
-      #  We would like to use the *callback* parameter, but it
-      #  does not work currently
-      self.private_key_password and self._to_bytes(self.private_key_password) or b"fail",
-      ),
-                self.entity_id
-                )
-
-  def _add_verify_keys(self, ctx):
-    from dm.saml2.metadata import role2element
-    for e in self.list_entities():
-      seen = set()
-      md = self.metadata_by_id(e.id)
-      for r in role2element:
-        for cert in md.get_role_certificates(r, "signing"):
-          if cert in seen: continue
-          seen.add(cert)
-          ctx.add_key(
-            xmlsec.Key.loadMemory(cert, xmlsec.KeyDataFormatCertDer, None),
-            e.id
-            )
 
   # override entity manager methods to update our signature context
   def _setOb(self, id, entity):
     super(SamlAuthority, self)._setOb(id, entity)
-    self._get_signature_cache().invalidate()
+    del self._get_keys_manager()[entity.id]
 
   # no harm is done, not to invalidate on "_delOb".
 
@@ -404,13 +380,15 @@ def own_metadata_changed(o, e):
 
 def signature_context_changed(o, e):
   """subscriber to be informaed whenever the signature context may become invalid."""
-  getUtility(ISamlAuthority)._get_signature_cache().invalidate()
+  del getUtility(ISamlAuthority)._get_keys_manager()[o.id]
 
 
 ### Customize add form
 class AuthorityAddForm(SchemaConfiguredAddForm):
   def customize_fields(self):
-    self.form_fields["base_url"].default = self.request["BASE_1"]
+    ff_base_url = self.form_fields["base_url"]
+    f = copy(ff_base_url.field); f.default = self.request["BASE1"]
+    ff_base_url.field = f
 
 
 ### Signature support
@@ -422,8 +400,14 @@ class _Delegator(object):
   def sign(self, *args, **kw):
     auth = self._get_authority()._get_signature_context("sign").sign(*args, **kw)
 
+  def sign_binary(self, *args, **kw):
+    auth = self._get_authority()._get_signature_context("sign").sign_binary(*args, **kw)
+
   def verify(self, *args, **kw):
     auth = self._get_authority()._get_signature_context("verify").verify(*args, **kw)
+
+  def verify_binary(self, *args, **kw):
+    auth = self._get_authority()._get_signature_context("verify").verify_binary(*args, **kw)
 
   def _get_authority(self):
     return getUtility(ISamlAuthority)
@@ -432,6 +416,60 @@ class _Delegator(object):
   #  be added only by the saml authority
 
 signature.default_sign_context = signature.default_verify_context = _Delegator()
+
+
+class _KeysManager(Explicit):
+  """Auxiliary class used as "keys_manager" for ``signature.SignatureContext``."""
+  def __init__(self):
+    self.eid2volatile_info = CsrfAwareOOBTree()
+
+  def __getitem__(self, eid):
+    """the keys associated with entity id *eid*."""
+    volatile = self.eid2volatile_info.get(eid)
+    info = volatile and volatile.get()
+    if info is not None and (info[0] is None or utcnow() <= info[0]):
+      return info[1]
+    # determine the keys
+    auth = self.aq_inner.aq_parent # expected to be the authority
+    validUntil = None
+    if auth.entity_id == eid:
+      # provide our sign key
+      keys = xmlsec.Key.load(
+        _make_absolute(auth.private_key),
+        xmlsec.KeyDataFormatPem,
+        # if we have no private key password, pass some value
+        #  to prevent an attempt to read it from the terminal
+        #  We would like to use the *callback* parameter, but it
+        #  does not work currently
+        auth.private_key_password and auth._to_bytes(auth.private_key_password) or b"fail",
+      ),
+    else:
+      # foreign entity
+      from dm.saml2.metadata import role2element
+      md = auth.metadata_by_id(eid)
+      rmd = md.get_recent_metadata()
+      validUntil = rmd.validUntil
+      keys = []
+      seen = set()
+      for r in role2element:
+        for cert in md.get_role_certificates(r, "signing"):
+          if cert in seen: continue
+          seen.add(cert)
+          keys.append(
+            xmlsec.Key.loadMemory(cert, xmlsec.KeyDataFormatCertDer, None),
+            )
+    # refetch `volatile` as a subcriber might have deleted the entry
+    volatile = self.eid2volatile_info.get(eid)
+    if volatile is None:
+      self.eid2volatile_info[eid] = volatile = Volatile()
+    volatile.set((validUntil, keys))
+    return keys
+
+  def get(self, eid, default=None):
+    return self[eid] or default
+
+  def __delitem__(self, eid):
+    if eid in self.eid2volatile_info: del self.eid2volatile_info[eid]
 
 
 def _make_absolute(fn):

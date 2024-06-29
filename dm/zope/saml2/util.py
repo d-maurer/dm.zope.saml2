@@ -54,8 +54,23 @@ class ZodbSynchronized(Persistent):
     self._p_activate() # work around bug in some ZODB versions
     self._p_changed=True # ensure caches in other ZODB connections are flushed
     csrf_safe_write(self)
-    for k in self.__dict__.keys():
+    for k in list(self.__dict__):
       if k.startswith("_v_"): delattr(self, k)
+
+
+class Volatile(Persistent):
+  """Persitent proxy to a volatile (non picklable) object.
+
+  Note: the proxied object may disappear at transaction boundaries.
+
+  Note: ZODB connections do not share the proxied object
+  proc
+  """
+  def __init__(self, obj=None):
+    self.set(obj)
+
+  def set(self, obj): self._v_obj = obj
+  def get(self): return getattr(self, "_v_obj", None)
 
 
 # Implement a `getCharset` function, no longer provided
